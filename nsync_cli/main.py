@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
 
-import json
 import os
 import sys
 from pathlib import Path
 
 from cryptography.fernet import Fernet
+import httpx
 import typer
+
+from nsync_cli.config import get_config, save_config
+
 
 app = typer.Typer()
 
@@ -34,21 +37,6 @@ key_path_arg = typer.Argument(
 )
 
 
-def get_config(config_dir):
-	config_path = config_dir / 'config.json'
-	if config_path.exists():
-		with config_path.open('r') as fh:
-			return json.loads(fh.read())
-
-	return {'endpoint': 'http://localhost:8000/graphql'}
-
-
-def save_config(config_dir, config):
-	config_path = config_dir / 'config.json'
-	with config_path.open('w') as fh:
-		fh.write(json.dumps(config, indent=2))
-
-
 @app.command()
 def start(config_dir: Path = config_dir_opt):
 	pass
@@ -57,6 +45,12 @@ def start(config_dir: Path = config_dir_opt):
 @app.command()
 def stop():
 	pass
+
+
+@app.command()
+def push():
+	pass
+	# stat.S_IMODE(st.st_mode)
 
 
 @app.command()
