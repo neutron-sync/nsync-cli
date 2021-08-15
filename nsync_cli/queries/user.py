@@ -13,7 +13,7 @@ query {
 
 key_query = """
 query {
-  syncKeys(first: 1, name: "$key") {
+  syncKeys(first: 1, name: $key) {
     edges{
       node{
         name
@@ -26,7 +26,7 @@ query {
 
 save_key = """
 mutation {
-  addKey(input: {name: "$key"}) {
+  addKey(input: {name: $key}) {
     syncKey{
       name
       id

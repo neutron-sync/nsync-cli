@@ -8,6 +8,7 @@ import httpx
 from nsync_cli.config import get_config
 from nsync_cli.queries.login import login_query
 from nsync_cli.queries.user import user_query, key_query, save_key
+from nsync_cli.queries.file import save_version_outer, save_version_inner
 
 
 class Client:
@@ -16,6 +17,7 @@ class Client:
 		'user': Template(user_query),
 		'key': Template(key_query),
 		'save_key': Template(save_key),
+		'save_version': [save_version_outer, save_version_inner]
 	}
 
 	def __init__(self, config_dir):
@@ -46,11 +48,26 @@ class Client:
 		with self.cookie_path.open('w') as fh:
 			fh.write(json.dumps(dict(self.last_response.cookies), indent=2))
 
+	@staticmethod
+	def set_types(params):
+		for key, value in params.items():
+			if isinstance(value, str):
+				params[key] = f'"{value}"'
+
+			elif isinstance(value, bool):
+				if value:
+					params[key] = 'true'
+
+				else:
+					params[key] = 'false'
+
+			elif value is None:
+				params[key] = 'null'
+
 	def graphql(self, qname, **params):
+		self.set_types(params)
 		query = self.QUERIES[qname].substitute(**params)
-		self.last_response = self.client.post('/graphql', data={'query': query}, cookies=self.cookies)
-		data = self.last_response.json()
-		self.save_cookies()
+		data = self.make_query(query)
 
 		if 'errors' in data and len(data['errors']):
 			for e in data['errors']:
@@ -59,6 +76,25 @@ class Client:
 			sys.exit(1)
 
 		return data
+
+	def make_query(self, query)
+		self.last_response = self.client.post('/graphql', data={'query': query}, cookies=self.cookies)
+		data = self.last_response.json()
+		self.save_cookies()
+		return data
+
+	def graphql_batch(self, qname, batch):
+		outer, inner = self.QUERIES[qname]
+		queries = ''
+
+		for b in batch:
+			self.set_types(b)
+			queries += inner.substitute(**b) + '\n'
+
+		query = outer.substitute(batch=queries)
+		data = self.make_query(query)
+		return data
+
 
 	def login(self, username, password):
 		self.graphql('login', username=username, password=password)

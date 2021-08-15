@@ -2,8 +2,8 @@ login_query = """
 mutation {
   login(
     input: {
-      username: "$username"
-      password: "$password"
+      username: $username
+      password: $password
     }
   ) {
     user{
