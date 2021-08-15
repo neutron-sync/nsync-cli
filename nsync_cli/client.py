@@ -86,3 +86,6 @@ class Client:
 
 	def register_key(self, name):
 		return self.graphql('save_key', key=name)
+
+	def push_paths(self, paths, home):
+		self.check_auth()
