@@ -1,4 +1,4 @@
-query = """
+login_query = """
 mutation {
   login(
     input: {
