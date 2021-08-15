@@ -1,0 +1,27 @@
+[project]
+name = "nsync-cli"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Paul Bailey", email = "paul@neutron.studio"},
+]
+dependencies = [
+    "typer~=0.3",
+    "cryptography~=3.4",
+]
+requires-python = ">=3.7"
+dynamic = ["classifiers"]
+license = {text = "MIT"}
+
+[project.urls]
+homepage = "https://github.com/neutron-sync/nsync-cli"
+
+[build-system]
+requires = ["pdm-pep517"]
+build-backend = "pdm.pep517.api"
+
+[console_scripts]
+nsync = "nsync_cli.main:app"
+
+[tool]
+[tool.pdm]
