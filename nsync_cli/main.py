@@ -52,6 +52,10 @@ def stop():
 
 
 @app.command()
+def pull(config_dir: Path = config_dir_opt):
+	pass
+
+@app.command()
 def add(
 	path_glob: List[str],
 	config_dir: Path = config_dir_opt,
@@ -69,7 +73,7 @@ def add(
 				paths.append(p)
 
 	if not paths:
-		echo('Nothing to push')
+		echo('Nothing to add')
 		sys.exit(0)
 
 	client = Client(config_dir)
