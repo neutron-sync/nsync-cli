@@ -1,9 +1,13 @@
+import base64
 import json
+import stat
 import sys
 from string import Template
 
 import click
 import httpx
+from cryptography.fernet import Fernet
+from py_essentials import hashing as hs
 
 from nsync_cli.config import get_config
 from nsync_cli.queries.login import login_query
@@ -17,7 +21,7 @@ class Client:
 		'user': Template(user_query),
 		'key': Template(key_query),
 		'save_key': Template(save_key),
-		'save_version': [save_version_outer, save_version_inner]
+		'save_version': [Template(save_version_outer), Template(save_version_inner)]
 	}
 
 	def __init__(self, config_dir):
@@ -39,6 +43,10 @@ class Client:
 	def print(msg):
 		click.secho(msg, fg='green')
 
+	@staticmethod
+	def echo(msg):
+		click.secho(msg)
+
 	def save_cookies(self):
 		self.cookies = dict(self.last_response.cookies)
 
@@ -47,6 +55,8 @@ class Client:
 
 		with self.cookie_path.open('w') as fh:
 			fh.write(json.dumps(dict(self.last_response.cookies), indent=2))
+
+		self.cookie_path.chmod(0o600)
 
 	@staticmethod
 	def set_types(params):
@@ -77,7 +87,7 @@ class Client:
 
 		return data
 
-	def make_query(self, query)
+	def make_query(self, query):
 		self.last_response = self.client.post('/graphql', data={'query': query}, cookies=self.cookies)
 		data = self.last_response.json()
 		self.save_cookies()
@@ -87,12 +97,20 @@ class Client:
 		outer, inner = self.QUERIES[qname]
 		queries = ''
 
-		for b in batch:
+		for i, b in enumerate(batch):
 			self.set_types(b)
-			queries += inner.substitute(**b) + '\n'
+			qname = f'query{i}'
+			queries += inner.substitute(qname=qname, **b) + '\n'
 
 		query = outer.substitute(batch=queries)
 		data = self.make_query(query)
+
+		if 'errors' in data and len(data['errors']):
+			for e in data['errors']:
+				self.error(e['message'])
+
+			sys.exit(1)
+
 		return data
 
 
@@ -111,7 +129,6 @@ class Client:
 
 		return user
 
-
 	def check_key(self, name):
 		self.check_auth()
 
@@ -123,5 +140,48 @@ class Client:
 	def register_key(self, name):
 		return self.graphql('save_key', key=name)
 
-	def push_paths(self, paths, home):
+	def push_paths(self, paths, home, confirmed):
 		self.check_auth()
+
+		batch = []
+		furry = Fernet(self.config['key']['value'])
+		for p in paths:
+			try:
+				upload_path = p.relative_to(home)
+
+			except ValueError:
+				upload_path = str(p)
+
+			else:
+				upload_path = '{{HOME}}/' + str(upload_path)
+
+			uhash = None
+			is_dir = p.is_dir()
+			ebody = None
+			permissions = stat.S_IMODE(p.stat().st_mode)
+			if not is_dir:
+				uhash = hs.fileChecksum(p, algorithm='sha256')
+				# todo: check hash
+				with p.open('rb') as fh:
+					ebody = furry.encrypt(fh.read())
+
+				ebody = base64.b64encode(ebody).decode()
+
+			b = {
+				'key': self.config['key']['name'],
+				'path': upload_path,
+				'uhash': uhash,
+				'permissions': permissions,
+				'is_dir': is_dir,
+				'ebody': ebody,
+				'original_path': p,
+			}
+			batch.append(b)
+
+		self.echo('Pushing Files:')
+		for b in batch:
+			self.echo(' {}'.format(b['original_path']))
+
+		if confirmed or click.confirm('Do you want to continue?'):
+			self.graphql_batch('save_version', batch)
+			self.print('Upload Complete')

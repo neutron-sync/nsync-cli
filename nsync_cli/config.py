@@ -14,3 +14,5 @@ def save_config(config_dir, config):
 	config_path = config_dir / 'config.json'
 	with config_path.open('w') as fh:
 		fh.write(json.dumps(config, indent=2))
+
+	config_path.chmod(0o600)

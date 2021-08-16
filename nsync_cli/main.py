@@ -52,7 +52,7 @@ def stop():
 
 
 @app.command()
-def push(
+def add(
 	path_glob: List[str],
 	config_dir: Path = config_dir_opt,
 	confirmed: bool = typer.Option(False, "--confirmed", help="Continue skipping cofirmations"),
@@ -72,15 +72,8 @@ def push(
 		echo('Nothing to push')
 		sys.exit(0)
 
-	echo('The following paths will be pushed')
-	for p in paths:
-		echo(f'  {p}')
-
-	if confirmed or click.confirm('Do you want to continue?'):
-		client = Client(config_dir)
-		client.push_paths(paths, str(HOME))
-
-	# stat.S_IMODE(st.st_mode)
+	client = Client(config_dir)
+	client.push_paths(paths, HOME, confirmed)
 
 
 @app.command()
@@ -96,30 +89,21 @@ def login(
 @app.command()
 def keygen(
 	key_name: str = typer.Argument('default'),
-	key_path: Path = key_path_arg,
 	config_dir: Path = config_dir_opt,
 ):
 	client = Client(config_dir)
 	client.check_key(key_name)
 
 	key = Fernet.generate_key().decode()
-
-	if not key_path.parent.exists():
-		os.makedirs(str(key_path.parent))
-
-	if key_path.exists():
-		error(f'Key file already exists: {key_path}')
+	config = get_config(config_dir)
+	if 'key' in  config and 'value' in config['key']:
+		error('Key already exists: {} {}'.format(config['key']['name'], config['key']['value']))
 		sys.exit(1)
 
-	with key_path.open('w') as fh:
-		fh.write(key)
-
-	key_path.chmod(0o600)
-	secho(f'Wrote: {key_path}')
-
-	config = get_config(config_dir)
-	config['key'] = {'name': key_name, 'path': str(key_path)}
+	config['key'] = {'name': key_name, 'value': key}
 	save_config(config_dir, config)
+	secho(f'Saved Key: {key}')
+	secho('!!! Don\'t Lose Your Config File and Key: {}'.format(config_dir / 'config.json'))
 
 	client.register_key(key_name)
 	secho(f'Key Registered: {key_name}')
