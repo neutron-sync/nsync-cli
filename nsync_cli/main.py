@@ -73,7 +73,11 @@ def add(
 		sys.exit(0)
 
 	client = Client(config_dir)
-	client.push_paths(paths, HOME, confirmed)
+	data = client.push_paths(paths, HOME, confirmed)
+	if data and 'data' in data:
+		for key, value in data['data'].items():
+			secho('Transaction Saved: {}'.format(value['transaction']))
+			return
 
 
 @app.command()

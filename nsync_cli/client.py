@@ -105,11 +105,15 @@ class Client:
 		query = outer.substitute(batch=queries)
 		data = self.make_query(query)
 
-		if 'errors' in data and len(data['errors']):
+		if data and 'errors' in data and len(data['errors']):
 			for e in data['errors']:
 				self.error(e['message'])
 
-			sys.exit(1)
+		if data and 'data' in data:
+			for key, value in data['data'].items():
+				if 'errors' in value:
+					for e in value['errors']:
+						self.error(e['message'])
 
 		return data
 
@@ -156,10 +160,13 @@ class Client:
 				upload_path = '{{HOME}}/' + str(upload_path)
 
 			uhash = None
-			is_dir = p.is_dir()
+			file_type = 'file'
 			ebody = None
 			permissions = stat.S_IMODE(p.stat().st_mode)
-			if not is_dir:
+			if p.is_dir():
+				file_type = 'dir'
+
+			else:
 				uhash = hs.fileChecksum(p, algorithm='sha256')
 				# todo: check hash
 				with p.open('rb') as fh:
@@ -172,7 +179,7 @@ class Client:
 				'path': upload_path,
 				'uhash': uhash,
 				'permissions': permissions,
-				'is_dir': is_dir,
+				'filetype': file_type,
 				'ebody': ebody,
 				'original_path': p,
 			}
@@ -183,5 +190,6 @@ class Client:
 			self.echo(' {}'.format(b['original_path']))
 
 		if confirmed or click.confirm('Do you want to continue?'):
-			self.graphql_batch('save_version', batch)
+			data = self.graphql_batch('save_version', batch)
 			self.print('Upload Complete')
+			return data

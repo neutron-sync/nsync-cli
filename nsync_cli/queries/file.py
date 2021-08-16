@@ -10,7 +10,7 @@ $qname: saveVersion(input: {
 	path: $path
 	uhash: $uhash
 	permissions: $permissions
-	isDir: $is_dir
+	fileType: $filetype
 	ebody: $ebody
 }) {
   transaction
