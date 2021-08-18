@@ -2,6 +2,7 @@ import base64
 import json
 import stat
 import sys
+from pathlib import Path
 from string import Template
 
 import click
@@ -12,7 +13,7 @@ from py_essentials import hashing as hs
 from nsync_cli.config import get_config
 from nsync_cli.queries.login import login_query
 from nsync_cli.queries.user import user_query, key_query, save_key
-from nsync_cli.queries.file import save_version_outer, save_version_inner
+from nsync_cli.queries.file import save_version_outer, save_version_inner, pull_versions
 
 
 class Client:
@@ -21,7 +22,8 @@ class Client:
 		'user': Template(user_query),
 		'key': Template(key_query),
 		'save_key': Template(save_key),
-		'save_version': [Template(save_version_outer), Template(save_version_inner)]
+		'save_version': [Template(save_version_outer), Template(save_version_inner)],
+		'pull_versions': Template(pull_versions),
 	}
 
 	def __init__(self, config_dir):
@@ -117,7 +119,6 @@ class Client:
 
 		return data
 
-
 	def login(self, username, password):
 		self.graphql('login', username=username, password=password)
 		self.print('Login Successful')
@@ -144,20 +145,71 @@ class Client:
 	def register_key(self, name):
 		return self.graphql('save_key', key=name)
 
+	@staticmethod
+	def shrink_path(p, home):
+		try:
+			upload_path = p.relative_to(home)
+
+		except ValueError:
+			return str(p)
+
+		else:
+			return '{{HOME}}/' + str(upload_path)
+
+	@staticmethod
+	def expand_path(p, home):
+		p = p.replace('{{HOME}}', str(home))
+		return Path(p)
+
+	def pull_paths(self, paths, home, confirmed):
+		self.check_auth()
+
+		local_paths = {}
+		for p in paths:
+			local_paths[self.shrink_path(p, home)] = p
+
+		data = self.graphql('pull_versions')
+		pulling = {}
+		for f in data['data']['syncFiles']['edges']:
+			file = f['node']
+			version = file['latestVersion']
+
+			if local_paths and file['path'] not in local_paths:
+				continue
+
+			if version:
+				local_path = self.expand_path(file['path'], home)
+				local_perms = None
+				local_hash = None
+				if local_path.exists():
+					local_perms = stat.S_IMODE(local_path.stat().st_mode)
+					if not local_path.is_dir():
+						local_hash = hs.fileChecksum(local_path, algorithm='sha256')
+						local_hash = 'narf'
+
+				if version['permissions'] != local_perms or version['uhash'] != local_hash:
+					version['local'] = local_path
+					pulling[file['path']] = version
+
+		if pulling:
+			self.echo('Pulling Files:')
+			for remote, v in pulling.items():
+				self.echo(' {}'.format(v['local']))
+
+			if confirmed or click.confirm('Do you want to continue?'):
+				print('TODO PULL')
+
+		else:
+			self.echo('Nothing to pull')
+
+
 	def push_paths(self, paths, home, confirmed):
 		self.check_auth()
 
 		batch = []
 		furry = Fernet(self.config['key']['value'])
 		for p in paths:
-			try:
-				upload_path = p.relative_to(home)
-
-			except ValueError:
-				upload_path = str(p)
-
-			else:
-				upload_path = '{{HOME}}/' + str(upload_path)
+			upload_path = self.shrink_path(p, home)
 
 			uhash = ''
 			file_type = 'file'

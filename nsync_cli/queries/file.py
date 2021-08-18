@@ -19,3 +19,21 @@ $qname: saveVersion(input: {
   }
 }
 """
+
+pull_versions = """
+query{
+  syncFiles(first:500) {
+    edges{
+      node{
+        path
+        latestVersion{
+          download
+          permissions
+          uhash
+          isDir
+        }
+      }
+    }
+  }
+}
+"""

@@ -4,7 +4,7 @@ import glob
 import os
 import sys
 
-from typing import List
+from typing import List, Optional
 from pathlib import Path
 
 from cryptography.fernet import Fernet
@@ -52,8 +52,25 @@ def stop():
 
 
 @app.command()
-def pull(config_dir: Path = config_dir_opt):
-	pass
+def pull(
+	path_glob: List[str] = typer.Argument(None),
+	config_dir: Path = config_dir_opt,
+	confirmed: bool = typer.Option(False, "--confirmed", help="Continue skipping cofirmations"),
+):
+	paths = []
+	for g in path_glob:
+		found = glob.glob(g, recursive=True)
+		for p in found:
+			p = Path(os.path.abspath(p))
+			if p.is_symlink():
+				pass
+
+			else:
+				paths.append(p)
+
+	client = Client(config_dir)
+	data = client.pull_paths(paths, HOME, confirmed)
+
 
 @app.command()
 def add(
