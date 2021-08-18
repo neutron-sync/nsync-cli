@@ -33,7 +33,7 @@ class Client:
 			with self.cookie_path.open('r') as fh:
 				self.cookies = json.loads(fh.read())
 
-		self.client = httpx.Client(cookies=self.cookies, base_url=self.config['server'])
+		self.client = httpx.Client(cookies=self.cookies, base_url=self.config['server_url'])
 
 	@staticmethod
 	def error(msg):
@@ -111,7 +111,7 @@ class Client:
 
 		if data and 'data' in data:
 			for key, value in data['data'].items():
-				if 'errors' in value:
+				if value and 'errors' in value:
 					for e in value['errors']:
 						self.error(e['message'])
 
@@ -159,9 +159,9 @@ class Client:
 			else:
 				upload_path = '{{HOME}}/' + str(upload_path)
 
-			uhash = None
+			uhash = ''
 			file_type = 'file'
-			ebody = None
+			ebody = ''
 			permissions = stat.S_IMODE(p.stat().st_mode)
 			if p.is_dir():
 				file_type = 'dir'

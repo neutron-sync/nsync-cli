@@ -1,5 +1,7 @@
 import json
 
+DEFAULT_SERVER_URL = 'https://www.neutronsync.com'
+
 
 def get_config(config_dir):
 	config_path = config_dir / 'config.json'
@@ -7,7 +9,7 @@ def get_config(config_dir):
 		with config_path.open('r') as fh:
 			return json.loads(fh.read())
 
-	return {'server': 'http://localhost:8000'}
+	return {'server_url': DEFAULT_SERVER_URL}
 
 
 def save_config(config_dir, config):

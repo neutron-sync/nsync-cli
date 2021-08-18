@@ -114,7 +114,7 @@ def keygen(
 	secho('!!! Don\'t Lose Your Config File and Key: {}'.format(config_dir / 'config.json'))
 
 	client.register_key(key_name)
-	secho(f'Key Registered: {key_name}')
+	secho(f'Key Registered as: {key_name}')
 
 
 def error(msg, exit=False):
