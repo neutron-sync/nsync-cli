@@ -1,4 +1,5 @@
 import json
+import os
 
 DEFAULT_SERVER_URL = 'https://www.neutronsync.com'
 
@@ -9,7 +10,12 @@ def get_config(config_dir):
 		with config_path.open('r') as fh:
 			return json.loads(fh.read())
 
-	return {'server_url': DEFAULT_SERVER_URL}
+	return {
+		'server_url': DEFAULT_SERVER_URL,
+		'expansions': {
+			'HOME': os.environ['HOME']
+		}
+	}
 
 
 def save_config(config_dir, config):

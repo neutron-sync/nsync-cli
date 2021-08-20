@@ -69,7 +69,7 @@ def pull(
 				paths.append(p)
 
 	client = Client(config_dir)
-	data = client.pull_paths(paths, HOME, confirmed)
+	data = client.pull_paths(paths, confirmed)
 
 
 @app.command()
@@ -94,7 +94,7 @@ def add(
 		sys.exit(0)
 
 	client = Client(config_dir)
-	data = client.push_paths(paths, HOME, confirmed)
+	data = client.push_paths(paths, confirmed)
 	if data and 'data' in data:
 		for key, value in data['data'].items():
 			secho('Transaction Saved: {}'.format(value['transaction']))

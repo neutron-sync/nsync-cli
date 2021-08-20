@@ -145,28 +145,34 @@ class Client:
 	def register_key(self, name):
 		return self.graphql('save_key', key=name)
 
-	@staticmethod
-	def shrink_path(p, home):
-		try:
-			upload_path = p.relative_to(home)
+	def shrink_path(self, p):
+		for key, d in self.config['expansions'].items():
+			dpath = Path(d)
+			try:
+				upload_path = p.relative_to(dpath)
 
-		except ValueError:
-			return str(p)
+			except ValueError:
+				pass
 
-		else:
-			return '{{HOME}}/' + str(upload_path)
+			else:
+				return '{{' + key + '}}/' + str(upload_path)
 
-	@staticmethod
-	def expand_path(p, home):
-		p = p.replace('{{HOME}}', str(home))
+		return str(p)
+
+	def expand_path(self, p):
+		for key, d in self.config['expansions'].items():
+			if p.startswith('{{' + key + '}}'):
+				p = p.replace('{{' + key + '}}', d)
+
 		return Path(p)
 
-	def pull_paths(self, paths, home, confirmed):
+	def pull_paths(self, paths, confirmed):
 		self.check_auth()
+		furry = Fernet(self.config['key']['value'])
 
 		local_paths = {}
 		for p in paths:
-			local_paths[self.shrink_path(p, home)] = p
+			local_paths[self.shrink_path(p)] = p
 
 		data = self.graphql('pull_versions')
 		pulling = {}
@@ -178,14 +184,13 @@ class Client:
 				continue
 
 			if version:
-				local_path = self.expand_path(file['path'], home)
+				local_path = self.expand_path(file['path'])
 				local_perms = None
 				local_hash = None
 				if local_path.exists():
 					local_perms = stat.S_IMODE(local_path.stat().st_mode)
 					if not local_path.is_dir():
 						local_hash = hs.fileChecksum(local_path, algorithm='sha256')
-						local_hash = 'narf'
 
 				if version['permissions'] != local_perms or version['uhash'] != local_hash:
 					version['local'] = local_path
@@ -197,19 +202,35 @@ class Client:
 				self.echo(' {}'.format(v['local']))
 
 			if confirmed or click.confirm('Do you want to continue?'):
-				print('TODO PULL')
+				for remote, v in pulling.items():
+					if not v['local'].parent.exists():
+						v['local'].parent.mkdir()
+
+					if v['isDir']:
+						if not v['local'].exists():
+							v['local'].mkdir()
+
+					else:
+						response = httpx.get(v['download'])
+						ebody = base64.b64decode(response.content)
+						body = furry.decrypt(ebody)
+						with v['local'].open('wb') as fh:
+							fh.write(body)
+
+					v['local'].chmod(v['permissions'])
+
 
 		else:
 			self.echo('Nothing to pull')
 
 
-	def push_paths(self, paths, home, confirmed):
+	def push_paths(self, paths, confirmed):
 		self.check_auth()
 
 		batch = []
 		furry = Fernet(self.config['key']['value'])
 		for p in paths:
-			upload_path = self.shrink_path(p, home)
+			upload_path = self.shrink_path(p)
 
 			uhash = ''
 			file_type = 'file'
