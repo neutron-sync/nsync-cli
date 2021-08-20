@@ -7,13 +7,14 @@ from string import Template
 
 import click
 import httpx
+import pendulum
 from cryptography.fernet import Fernet
 from py_essentials import hashing as hs
 
 from nsync_cli.config import get_config
 from nsync_cli.queries.login import login_query
 from nsync_cli.queries.user import user_query, key_query, save_key
-from nsync_cli.queries.file import save_version_outer, save_version_inner, pull_versions
+from nsync_cli.queries.file import save_version_outer, save_version_inner, pull_versions, list_versions
 
 
 class Client:
@@ -24,6 +25,7 @@ class Client:
 		'save_key': Template(save_key),
 		'save_version': [Template(save_version_outer), Template(save_version_inner)],
 		'pull_versions': Template(pull_versions),
+		'list_versions': Template(list_versions),
 	}
 
 	def __init__(self, config_dir):
@@ -165,6 +167,26 @@ class Client:
 				p = p.replace('{{' + key + '}}', d)
 
 		return Path(p)
+
+	def list_server(self):
+		self.check_auth()
+		data = self.graphql('list_versions')
+		self.echo(f'List files for key: {self.config["key"]["name"]}')
+		for f in data['data']['syncFiles']['edges']:
+			file = f['node']
+			version = file['latestVersion']
+
+			if version:
+				local_path = self.expand_path(file['path'])
+				dt = pendulum.parse(version['created']).to_rfc1123_string()
+				t = base64.b64decode(version['transaction']['id'].encode()).decode().split(':')[-1]
+				if version['isDir']:
+					self.echo(f'Dir  : {local_path}')
+
+				else:
+					self.echo(f'File : {local_path}')
+
+				self.echo(f'  Transaction: {t}; {dt}')
 
 	def pull_paths(self, paths, confirmed):
 		self.check_auth()

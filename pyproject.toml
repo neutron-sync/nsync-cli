@@ -10,6 +10,7 @@ dependencies = [
     "cryptography~=3.4",
     "httpx[brotli,http2]~=0.18",
     "py-essentials~=1.4",
+    "pendulum~=2.1",
 ]
 requires-python = ">=3.7"
 dynamic = ["classifiers"]

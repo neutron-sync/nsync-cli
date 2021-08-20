@@ -52,6 +52,12 @@ def stop():
 
 
 @app.command()
+def list_server_files(config_dir: Path = config_dir_opt):
+	client = Client(config_dir)
+	client.list_server()
+
+
+@app.command()
 def pull(
 	path_glob: List[str] = typer.Argument(None),
 	config_dir: Path = config_dir_opt,

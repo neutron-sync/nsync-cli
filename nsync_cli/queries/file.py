@@ -37,3 +37,22 @@ query{
   }
 }
 """
+
+list_versions = """
+query{
+  syncFiles(first:500) {
+    edges{
+      node{
+        path
+        latestVersion{
+          isDir
+          created
+          transaction{
+            id
+          }
+        }
+      }
+    }
+  }
+}
+"""
