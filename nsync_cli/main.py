@@ -12,6 +12,7 @@ import click
 import httpx
 import typer
 
+import nsync_cli
 from nsync_cli.config import get_config, save_config
 from nsync_cli.client import Client
 
@@ -139,6 +140,10 @@ def keygen(
   client.register_key(key_name)
   secho(f'Key Registered as: {key_name}')
 
+
+@app.command()
+def version():
+  secho(f'Version: {nsync_cli.__version__}')
 
 def error(msg, exit=False):
   click.secho('Error: ' + msg, fg='red', err=True)

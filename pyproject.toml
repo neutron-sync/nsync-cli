@@ -1,6 +1,6 @@
 [project]
 name = "nsync-cli"
-version = "0.1.0"
+version = {from = "nsync_cli/__init__.py"}
 description = "NeutronSync command line client. Use to securely sync your dot files."
 authors = [
     {name = "Paul Bailey", email = "paul@neutron.studio"},
@@ -25,7 +25,7 @@ homepage = "https://github.com/neutron-sync/nsync-cli"
 requires = ["pdm-pep517"]
 build-backend = "pdm.pep517.api"
 
-[console_scripts]
+[project.scripts]
 nsync = "nsync_cli.main:app"
 
 [tool]
