@@ -1,7 +1,7 @@
 [project]
 name = "nsync-cli"
 version = "0.1.0"
-description = ""
+description = "NeutronSync command line client. Use to securely sync your dot files."
 authors = [
     {name = "Paul Bailey", email = "paul@neutron.studio"},
 ]
