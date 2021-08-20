@@ -1,2 +1,3 @@
-# nsync-cli
-Neutron Sync CLI Client
+# Neutron Sync CLI Client
+
+More info coming soon
