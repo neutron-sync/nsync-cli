@@ -22,138 +22,138 @@ CONFIG_DIR = HOME / '.config' / 'nsync'
 
 config_dir_opt = typer.Option(
   CONFIG_DIR,
-	exists=False,
-	file_okay=False,
-	dir_okay=True,
-	writable=True,
-	readable=True,
-	resolve_path=True,
+  exists=False,
+  file_okay=False,
+  dir_okay=True,
+  writable=True,
+  readable=True,
+  resolve_path=True,
 )
 
 key_path_arg = typer.Argument(
-	CONFIG_DIR / 'key.txt',
-	exists=False,
-	file_okay=True,
-	dir_okay=False,
-	writable=True,
-	readable=True,
-	resolve_path=True,
+  CONFIG_DIR / 'key.txt',
+  exists=False,
+  file_okay=True,
+  dir_okay=False,
+  writable=True,
+  readable=True,
+  resolve_path=True,
 )
 
 
 @app.command()
 def start(config_dir: Path = config_dir_opt):
-	error('Not Implemented', exit=True)
+  error('Not Implemented', exit=True)
 
 
 @app.command()
 def stop():
-	error('Not Implement', exit=True)
+  error('Not Implement', exit=True)
 
 
 @app.command()
 def list_server_files(config_dir: Path = config_dir_opt):
-	client = Client(config_dir)
-	client.list_server()
+  client = Client(config_dir)
+  client.list_server()
 
 
 @app.command()
 def pull(
-	path_glob: List[str] = typer.Argument(None),
-	config_dir: Path = config_dir_opt,
-	confirmed: bool = typer.Option(False, "--confirmed", help="Continue skipping cofirmations"),
+    path_glob: List[str] = typer.Argument(None),
+    config_dir: Path = config_dir_opt,
+    confirmed: bool = typer.Option(False, "--confirmed", help="Continue skipping cofirmations"),
 ):
-	paths = []
-	for g in path_glob:
-		found = glob.glob(g, recursive=True)
-		for p in found:
-			p = Path(os.path.abspath(p))
-			if p.is_symlink():
-				pass
+  paths = []
+  for g in path_glob:
+    found = glob.glob(g, recursive=True)
+    for p in found:
+      p = Path(os.path.abspath(p))
+      if p.is_symlink():
+        pass
 
-			else:
-				paths.append(p)
+      else:
+        paths.append(p)
 
-	client = Client(config_dir)
-	data = client.pull_paths(paths, confirmed)
+  client = Client(config_dir)
+  data = client.pull_paths(paths, confirmed)
 
 
 @app.command()
 def add(
-	path_glob: List[str],
-	config_dir: Path = config_dir_opt,
-	confirmed: bool = typer.Option(False, "--confirmed", help="Continue skipping cofirmations"),
+    path_glob: List[str],
+    config_dir: Path = config_dir_opt,
+    confirmed: bool = typer.Option(False, "--confirmed", help="Continue skipping cofirmations"),
 ):
-	paths = []
-	for g in path_glob:
-		found = glob.glob(g, recursive=True)
-		for p in found:
-			p = Path(os.path.abspath(p))
-			if p.is_symlink():
-				pass
+  paths = []
+  for g in path_glob:
+    found = glob.glob(g, recursive=True)
+    for p in found:
+      p = Path(os.path.abspath(p))
+      if p.is_symlink():
+        pass
 
-			else:
-				paths.append(p)
+      else:
+        paths.append(p)
 
-	if not paths:
-		echo('Nothing to add')
-		sys.exit(0)
+  if not paths:
+    echo('Nothing to add')
+    sys.exit(0)
 
-	client = Client(config_dir)
-	data = client.push_paths(paths, confirmed)
-	if data and 'data' in data:
-		for key, value in data['data'].items():
-			secho('Transaction Saved: {}'.format(value['transaction']))
-			return
+  client = Client(config_dir)
+  data = client.push_paths(paths, confirmed)
+  if data and 'data' in data:
+    for key, value in data['data'].items():
+      secho('Transaction Saved: {}'.format(value['transaction']))
+      return
 
 
 @app.command()
 def login(
-		username: str = typer.Option(None, prompt=True),
-		password: str = typer.Option(None, prompt=True, hide_input=True),
-		config_dir: Path = config_dir_opt,
-	):
-		client = Client(config_dir)
-		client.login(username, password)
+    username: str = typer.Option(None, prompt=True),
+    password: str = typer.Option(None, prompt=True, hide_input=True),
+    config_dir: Path = config_dir_opt,
+):
+  client = Client(config_dir)
+  client.login(username, password)
 
 
 @app.command()
 def keygen(
-	key_name: str = typer.Argument('default'),
-	config_dir: Path = config_dir_opt,
+    key_name: str = typer.Argument('default'),
+    config_dir: Path = config_dir_opt,
 ):
-	client = Client(config_dir)
-	client.check_key(key_name)
+  client = Client(config_dir)
+  client.check_key(key_name)
 
-	key = Fernet.generate_key().decode()
-	config = get_config(config_dir)
-	if 'key' in  config and 'value' in config['key']:
-		error('Key already exists: {} {}'.format(config['key']['name'], config['key']['value']))
-		sys.exit(1)
+  key = Fernet.generate_key().decode()
+  config = get_config(config_dir)
+  if 'key' in config and 'value' in config['key']:
+    error('Key already exists: {} {}'.format(config['key']['name'], config['key']['value']))
+    sys.exit(1)
 
-	config['key'] = {'name': key_name, 'value': key}
-	save_config(config_dir, config)
-	secho(f'Saved Key: {key}')
-	secho('!!! Don\'t Lose Your Config File and Key: {}'.format(config_dir / 'config.json'))
+  config['key'] = {'name': key_name, 'value': key}
+  save_config(config_dir, config)
+  secho(f'Saved Key: {key}')
+  secho('!!! Don\'t Lose Your Config File and Key: {}'.format(config_dir / 'config.json'))
 
-	client.register_key(key_name)
-	secho(f'Key Registered as: {key_name}')
+  client.register_key(key_name)
+  secho(f'Key Registered as: {key_name}')
 
 
 def error(msg, exit=False):
-	click.secho('Error: ' + msg, fg='red', err=True)
+  click.secho('Error: ' + msg, fg='red', err=True)
 
-	if exit:
-		sys.exit(1)
+  if exit:
+    sys.exit(1)
 
 
 def echo(msg):
-	click.secho(msg)
+  click.secho(msg)
 
 
 def secho(msg):
-	click.secho(msg, fg='green')
+  click.secho(msg, fg='green')
 
 
 if __name__ == "__main__":
-	app()
+  app()

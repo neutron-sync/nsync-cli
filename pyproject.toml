@@ -19,6 +19,8 @@ license = {text = "MIT"}
 [project.urls]
 homepage = "https://github.com/neutron-sync/nsync-cli"
 
+
+[project.optional-dependencies]
 [build-system]
 requires = ["pdm-pep517"]
 build-backend = "pdm.pep517.api"
@@ -28,3 +30,11 @@ nsync = "nsync_cli.main:app"
 
 [tool]
 [tool.pdm]
+[tool.pdm.dev-dependencies]
+dev = [
+    "yapf~=0.31",
+]
+
+[tool.pdm.scripts]
+format = "yapf -rpi -vv ."
+check_format = "yapf -rpd ."
