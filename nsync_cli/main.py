@@ -53,7 +53,7 @@ def stop():
 
 
 @app.command()
-def list_server_files(config_dir: Path = config_dir_opt):
+def list_remote(config_dir: Path = config_dir_opt):
   client = Client(config_dir)
   client.list_server()
 
