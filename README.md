@@ -29,3 +29,8 @@ Add new files to sync: `nsync add path/to/file`
 Pull files that need to be updated: `nsync pull`
 
 The `add` command supports file globs like `.ssh/*` and `./ssh/**/*` with the second example being recursive.
+
+## Limitation
+
+- Files synced are assumed to be small configuration files. Larger files (>1mb) may choke or slow down sync processes.
+- The client only supports a limit of 500 files to sync right now.
