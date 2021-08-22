@@ -1,5 +1,6 @@
 import base64
 import json
+import shutil
 import stat
 import sys
 from pathlib import Path
@@ -236,6 +237,13 @@ class Client:
             response = httpx.get(v['download'])
             ebody = base64.b64decode(response.content)
             body = furry.decrypt(ebody)
+
+            if self.config['backups'] and v['local'].exists():
+              backup = Path(str(v['local']))
+              backup = backup.with_suffix(self.config['backup_suffix'])
+              backup.touch()
+              shutil.copy2(v['local'], backup)
+
             with v['local'].open('wb') as fh:
               fh.write(body)
 
@@ -249,7 +257,16 @@ class Client:
 
     batch = []
     furry = Fernet(self.config['key']['value'])
+    ignore = False
     for p in paths:
+      for ext in self.config['extensions_ignore']:
+        if ext in p.suffixes:
+          ignore = True
+          break
+
+      if ignore:
+        continue
+
       upload_path = self.shrink_path(p)
 
       uhash = ''
@@ -277,6 +294,10 @@ class Client:
         'original_path': p,
       }
       batch.append(b)
+
+    if not batch:
+      self.echo('Nothing to push')
+      return
 
     self.echo('Pushing Files:')
     for b in batch:

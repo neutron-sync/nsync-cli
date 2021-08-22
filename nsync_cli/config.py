@@ -10,7 +10,13 @@ def get_config(config_dir):
     with config_path.open('r') as fh:
       return json.loads(fh.read())
 
-  return {'server_url': DEFAULT_SERVER_URL, 'expansions': {'HOME': os.environ['HOME']}}
+  return {
+    'server_url': DEFAULT_SERVER_URL,
+    'expansions': {'HOME': os.environ['HOME']},
+    'backups': True,
+    'backup_suffix': '.backup',
+    'extensions_ignore': ['.backup'],
+  }
 
 
 def save_config(config_dir, config):
