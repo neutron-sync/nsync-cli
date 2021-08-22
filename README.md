@@ -34,3 +34,13 @@ The `add` command supports file globs like `.ssh/*` and `./ssh/**/*` with the se
 
 - Files synced are assumed to be small configuration files. Larger files (>1mb) may choke or slow down sync processes.
 - The client only supports a limit of 500 files to sync right now.
+
+## Open Source
+
+Visit our [Github](https://github.com/neutron-sync/nsync-cli) to contribute the project.
+
+## Running Your Own Server
+
+To use your own server update your config file, replacing the `server_url` value: `"server_url": "https://www.neutronsync.com"`
+
+See the [Neutron Server](https://github.com/neutron-sync/nsync-server) project for information on how to host your own server.
