@@ -2,7 +2,7 @@
 
 ## Introduction
 
-Neutron Sync is a synchronization tool that helps you synchronize your small configuration files often referred to as dot files. Since these files are often sensitive and contain things such as encryption keys and passwords, the files are encrypted before storing them remotely. Only you own the key and can decrypt the files. Additionally, if you use the default www.neutronsync.com remote store, then files are encrypted again at rest. Thus files are encrypted twice for extra security.
+Neutron Sync is a synchronization tool that helps you synchronize your small configuration files often referred to as dot files. Since these files are often sensitive and contain things such as encryption keys and passwords, files are encrypted before being stored remotely. Only you own the key that can decrypt the files. Additionally, if you use the default www.neutronsync.com remote store, then files are encrypted again at rest. Thus files are encrypted twice for extra security.
 
 ## Installation
 

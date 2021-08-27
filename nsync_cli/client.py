@@ -59,7 +59,7 @@ class Client:
     self.cookies = dict(self.last_response.cookies)
 
     if not self.cookie_path.parent.exists():
-      self.cookie_path.parent.mkdir()
+      self.cookie_path.parent.mkdir(parents=True)
 
     with self.cookie_path.open('w') as fh:
       fh.write(json.dumps(dict(self.last_response.cookies), indent=2))
@@ -259,11 +259,11 @@ class Client:
       if confirmed or click.confirm('Do you want to continue?'):
         for remote, v in pulling.items():
           if not v['local'].parent.exists():
-            v['local'].parent.mkdir()
+            v['local'].parent.mkdir(parents=True)
 
           if v['isDir']:
             if not v['local'].exists():
-              v['local'].mkdir()
+              v['local'].mkdir(parents=True)
 
           else:
             response = httpx.get(v['download'])
