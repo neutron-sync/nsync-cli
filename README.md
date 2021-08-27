@@ -43,6 +43,6 @@ Visit our [Github](https://github.com/neutron-sync/nsync-cli) to contribute the 
 
 ## Running Your Own Server
 
-To use your own server update your config file, replacing the `server_url` value: `"server_url": "https://www.neutronsync.com"`. Your config file is located at `~/.config/nsync/config.json`
+To use your own server update your config file, replace the `server_url` value: `"server_url": "https://www.neutronsync.com"`. Your config file is located at `~/.config/nsync/config.json`
 
 See the [Neutron Server](https://github.com/neutron-sync/nsync-server) project for information on how to host your own server.
