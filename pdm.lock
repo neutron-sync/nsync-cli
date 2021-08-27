@@ -115,7 +115,7 @@ dependencies = [
     "charset-normalizer",
     "h2<5,>=3",
     "httpcore<0.14.0,>=0.13.3",
-    "httpx~=0.18",
+    "httpx==0.19.0",
     "rfc3986[idna2008]<2,>=1.3",
     "sniffio",
 ]
@@ -180,7 +180,7 @@ extras = ["idna2008"]
 summary = "Validating URI References per RFC 3986"
 dependencies = [
     "idna",
-    "rfc3986<2,>=1.3",
+    "rfc3986==1.5.0",
 ]
 
 [[package]]
@@ -194,6 +194,11 @@ name = "sniffio"
 version = "1.2.0"
 requires_python = ">=3.5"
 summary = "Sniff out which async library your code is running under"
+
+[[package]]
+name = "tabulate"
+version = "0.8.9"
+summary = "Pretty-print tabular data"
 
 [[package]]
 name = "typer"
@@ -216,7 +221,7 @@ summary = "A formatter for Python code."
 
 [metadata]
 lock_version = "3"
-content_hash = "sha256:e0f4b59f7d8b0e4192ad4585799007ebba2d346952d4166696a5a16daebb91fc"
+content_hash = "sha256:f8087ce3a413877d2cd757a811ad6d9c69545508acefe875ea69d40c24445567"
 
 [metadata.files]
 "anyio 3.3.0" = [
@@ -456,6 +461,10 @@ content_hash = "sha256:e0f4b59f7d8b0e4192ad4585799007ebba2d346952d4166696a5a16da
 "sniffio 1.2.0" = [
     {file = "sniffio-1.2.0-py3-none-any.whl", hash = "sha256:471b71698eac1c2112a40ce2752bb2f4a4814c22a54a3eed3676bc0f5ca9f663"},
     {file = "sniffio-1.2.0.tar.gz", hash = "sha256:c4666eecec1d3f50960c6bdf61ab7bc350648da6c126e3cf6898d8cd4ddcd3de"},
+]
+"tabulate 0.8.9" = [
+    {file = "tabulate-0.8.9-py3-none-any.whl", hash = "sha256:d7c013fe7abbc5e491394e10fa845f8f32fe54f8dc60c6622c6cf482d25d47e4"},
+    {file = "tabulate-0.8.9.tar.gz", hash = "sha256:eb1d13f25760052e8931f2ef80aaf6045a6cceb47514db8beab24cded16f13a7"},
 ]
 "typer 0.3.2" = [
     {file = "typer-0.3.2-py3-none-any.whl", hash = "sha256:ba58b920ce851b12a2d790143009fa00ac1d05b3ff3257061ff69dbdfc3d161b"},

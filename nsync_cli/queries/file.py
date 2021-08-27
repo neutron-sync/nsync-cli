@@ -10,6 +10,7 @@ $qname: saveVersion(input: {
 	path: $path
 	uhash: $uhash
 	permissions: $permissions
+  timestamp: $timestamp
 	fileType: $filetype
 	ebody: $ebody
 }) {
@@ -29,6 +30,7 @@ query{
         latestVersion{
           download
           permissions
+          timestamp
           uhash
           isDir
         }
@@ -46,6 +48,7 @@ query{
         path
         latestVersion{
           isDir
+          timestamp
           created
           transaction{
             id

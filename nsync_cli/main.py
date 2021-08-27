@@ -62,6 +62,7 @@ def list_remote(config_dir: Path = config_dir_opt):
 def pull(
     path_glob: List[str] = typer.Argument(None),
     config_dir: Path = config_dir_opt,
+    force: bool = typer.Option(False, "--force", help="Force all files to down"),
     confirmed: bool = typer.Option(False, "--confirmed", help="Continue skipping cofirmations"),
 ):
   paths = []
@@ -76,7 +77,7 @@ def pull(
         paths.append(p)
 
   client = Client(config_dir)
-  data = client.pull_paths(paths, confirmed)
+  data = client.pull_paths(paths, force, confirmed)
 
 
 @app.command()

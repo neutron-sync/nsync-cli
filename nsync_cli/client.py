@@ -1,5 +1,7 @@
 import base64
+import datetime
 import json
+import os
 import shutil
 import stat
 import sys
@@ -11,6 +13,7 @@ import httpx
 import pendulum
 from cryptography.fernet import Fernet
 from py_essentials import hashing as hs
+from tabulate import tabulate
 
 from nsync_cli.config import get_config
 from nsync_cli.queries.login import login_query
@@ -173,23 +176,24 @@ class Client:
     self.check_auth()
     data = self.graphql('list_versions')
     self.echo(f'List files for key: {self.config["key"]["name"]}')
+    table = [['Dir', 'Path', 'Trans', 'Timestamp UTC']]
     for f in data['data']['syncFiles']['edges']:
       file = f['node']
       version = file['latestVersion']
 
       if version:
         local_path = self.expand_path(file['path'])
-        dt = pendulum.parse(version['created']).to_rfc1123_string()
+        dt = pendulum.parse(version['created']).to_rfc1123_string()[:-6]
         t = base64.b64decode(version['transaction']['id'].encode()).decode().split(':')[-1]
         if version['isDir']:
-          self.echo(f'Dir  : {local_path}')
+          table.append(['d', local_path, t, dt])
 
         else:
-          self.echo(f'File : {local_path}')
+          table.append(['', local_path, t, dt])
 
-        self.echo(f'  Transaction: {t}; {dt}')
+    self.echo(tabulate(table))
 
-  def pull_paths(self, paths, confirmed):
+  def pull_paths(self, paths, force=False, confirmed=False):
     self.check_auth()
     furry = Fernet(self.config['key']['value'])
 
@@ -210,19 +214,47 @@ class Client:
         local_path = self.expand_path(file['path'])
         local_perms = None
         local_hash = None
+        local_modified = None
         if local_path.exists():
-          local_perms = stat.S_IMODE(local_path.stat().st_mode)
+          fstats = local_path.stat()
+          local_perms = stat.S_IMODE(fstats.st_mode)
+          local_modified = datetime.datetime.fromtimestamp(fstats.st_mtime, tz=datetime.timezone.utc)
           if not local_path.is_dir():
             local_hash = hs.fileChecksum(local_path, algorithm='sha256')
 
-        if version['permissions'] != local_perms or version['uhash'] != local_hash:
+        if version['uhash'] != local_hash or force:
+          remote_ts = pendulum.parse(version['timestamp'])
+          if local_modified is None:
+            version['reason'] = 'Does not exist'
+
+          elif local_modified > remote_ts:
+            version['reason'] = 'modifed after remote'
+
+          elif local_modified < remote_ts:
+            version['reason'] = 'older than remote'
+
+          else:
+            if force:
+              version['reason'] = 'forced sync'
+
+            else:
+              version['reason'] = 'contents out of sync'
+
+          version['local'] = local_path
+          pulling[file['path']] = version
+
+        elif version['permissions'] != local_perms:
+          version['reason'] = 'Permissions inconsistent'
           version['local'] = local_path
           pulling[file['path']] = version
 
     if pulling:
       self.echo('Pulling Files:')
+      table = []
       for remote, v in pulling.items():
-        self.echo(' {}'.format(v['local']))
+        table.append([v['local'], v['reason']])
+
+      self.echo(tabulate(table))
 
       if confirmed or click.confirm('Do you want to continue?'):
         for remote, v in pulling.items():
@@ -248,6 +280,8 @@ class Client:
               fh.write(body)
 
           v['local'].chmod(v['permissions'])
+          ts = pendulum.parse(v['timestamp']).timestamp()
+          os.utime(v['local'], (ts, ts))
 
     else:
       self.echo('Nothing to pull')
@@ -272,7 +306,9 @@ class Client:
       uhash = ''
       file_type = 'file'
       ebody = ''
-      permissions = stat.S_IMODE(p.stat().st_mode)
+      fstats = p.stat()
+      permissions = stat.S_IMODE(fstats.st_mode)
+      timestamp = datetime.datetime.fromtimestamp(fstats.st_mtime, tz=datetime.timezone.utc).isoformat()
       if p.is_dir():
         file_type = 'dir'
 
@@ -289,6 +325,7 @@ class Client:
         'path': upload_path,
         'uhash': uhash,
         'permissions': permissions,
+        'timestamp': timestamp,
         'filetype': file_type,
         'ebody': ebody,
         'original_path': p,
