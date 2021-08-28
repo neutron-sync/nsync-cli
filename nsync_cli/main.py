@@ -59,6 +59,15 @@ def list_remote(config_dir: Path = config_dir_opt):
 
 
 @app.command()
+def push(
+    config_dir: Path = config_dir_opt,
+    confirmed: bool = typer.Option(False, "--confirmed", help="Continue skipping cofirmations"),
+):
+  client = Client(config_dir)
+  data = client.push(confirmed)
+
+
+@app.command()
 def pull(
     path_glob: List[str] = typer.Argument(None),
     config_dir: Path = config_dir_opt,
@@ -102,7 +111,7 @@ def add(
     sys.exit(0)
 
   client = Client(config_dir)
-  data = client.push_paths(paths, confirmed)
+  data = client.add_paths(paths, confirmed)
   if data and 'data' in data:
     for key, value in data['data'].items():
       secho('Transaction Saved: {}'.format(value['transaction']))

@@ -193,6 +193,81 @@ class Client:
 
     self.echo(tabulate(table))
 
+  def push(self, confirmed=False):
+    self.check_auth()
+    furry = Fernet(self.config['key']['value'])
+
+    data = self.graphql('pull_versions')
+    pushing = {}
+    missing = {}
+    for f in data['data']['syncFiles']['edges']:
+      file = f['node']
+      version = file['latestVersion']
+
+      if version:
+        local_path = self.expand_path(file['path'])
+        local_perms = None
+        local_hash = None
+        local_modified = None
+
+        if local_path.exists():
+          fstats = local_path.stat()
+          local_perms = stat.S_IMODE(fstats.st_mode)
+          local_modified = datetime.datetime.fromtimestamp(fstats.st_mtime, tz=datetime.timezone.utc)
+          if not local_path.is_dir():
+            local_hash = hs.fileChecksum(local_path, algorithm='sha256')
+
+          if version['uhash'] != local_hash:
+            remote_ts = pendulum.parse(version['timestamp'])
+            if local_modified > remote_ts:
+              version['reason'] = 'modifed after remote'
+
+            elif local_modified < remote_ts:
+              version['reason'] = 'older than remote'
+
+            else:
+              version['reason'] = 'contents out of sync'
+
+            version['local'] = local_path
+            pushing[file['path']] = version
+
+          elif version['permissions'] != local_perms:
+            version['reason'] = 'Permissions inconsistent'
+            version['local'] = local_path
+            pushing[file['path']] = version
+
+        else:
+          version['local'] = local_path
+          missing[file['path']] = version
+
+    if missing:
+      self.echo('Files Missing Locally:')
+      for remote, v in missing.items():
+        self.echo(f" {v['local']}")
+
+      self.echo("")
+
+    if pushing:
+      self.echo('Pushing Files:')
+      table = []
+      for remote, v in pushing.items():
+        table.append([v['local'], v['reason']])
+
+      self.echo(tabulate(table))
+
+      if confirmed or click.confirm('Do you want to continue?'):
+        batch = []
+        for remote, v in pushing.items():
+          batch.append(self.prepare_upload(v['local'], furry))
+
+        data = self.graphql_batch('save_version', batch)
+        self.print('Upload Complete')
+        return data
+
+    else:
+      self.echo('Nothing to push')
+
+
   def pull_paths(self, paths, force=False, confirmed=False):
     self.check_auth()
     furry = Fernet(self.config['key']['value'])
@@ -286,7 +361,37 @@ class Client:
     else:
       self.echo('Nothing to pull')
 
-  def push_paths(self, paths, confirmed):
+  def prepare_upload(self, p, furry):
+    upload_path = self.shrink_path(p)
+    uhash = ''
+    file_type = 'file'
+    ebody = ''
+    fstats = p.stat()
+    permissions = stat.S_IMODE(fstats.st_mode)
+    timestamp = datetime.datetime.fromtimestamp(fstats.st_mtime, tz=datetime.timezone.utc).isoformat()
+    if p.is_dir():
+      file_type = 'dir'
+
+    else:
+      uhash = hs.fileChecksum(p, algorithm='sha256')
+      # todo: check hash
+      with p.open('rb') as fh:
+        ebody = furry.encrypt(fh.read())
+
+      ebody = base64.b64encode(ebody).decode()
+
+    return {
+      'key': self.config['key']['name'],
+      'path': upload_path,
+      'uhash': uhash,
+      'permissions': permissions,
+      'timestamp': timestamp,
+      'filetype': file_type,
+      'ebody': ebody,
+      'original_path': p,
+    }
+
+  def add_paths(self, paths, confirmed):
     self.check_auth()
 
     batch = []
@@ -301,36 +406,7 @@ class Client:
       if ignore:
         continue
 
-      upload_path = self.shrink_path(p)
-
-      uhash = ''
-      file_type = 'file'
-      ebody = ''
-      fstats = p.stat()
-      permissions = stat.S_IMODE(fstats.st_mode)
-      timestamp = datetime.datetime.fromtimestamp(fstats.st_mtime, tz=datetime.timezone.utc).isoformat()
-      if p.is_dir():
-        file_type = 'dir'
-
-      else:
-        uhash = hs.fileChecksum(p, algorithm='sha256')
-        # todo: check hash
-        with p.open('rb') as fh:
-          ebody = furry.encrypt(fh.read())
-
-        ebody = base64.b64encode(ebody).decode()
-
-      b = {
-        'key': self.config['key']['name'],
-        'path': upload_path,
-        'uhash': uhash,
-        'permissions': permissions,
-        'timestamp': timestamp,
-        'filetype': file_type,
-        'ebody': ebody,
-        'original_path': p,
-      }
-      batch.append(b)
+      batch.append(self.prepare_upload(p, furry))
 
     if not batch:
       self.echo('Nothing to push')
