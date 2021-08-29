@@ -43,16 +43,6 @@ key_path_arg = typer.Argument(
 
 
 @app.command()
-def start(config_dir: Path = config_dir_opt):
-  error('Not Implemented', exit=True)
-
-
-@app.command()
-def stop():
-  error('Not Implement', exit=True)
-
-
-@app.command()
 def list_remote(config_dir: Path = config_dir_opt):
   client = Client(config_dir)
   client.list_server()
@@ -150,6 +140,24 @@ def keygen(
   client.register_key(key_name)
   secho(f'Key Registered as: {key_name}')
 
+
+@app.command()
+def start_key_exchange(
+  expassword: str = typer.Option(None, prompt='Temporary Password for Exchange Encryption', hide_input=True),
+  config_dir: Path = config_dir_opt
+):
+  client = Client(config_dir)
+  client.start_exchange(expassword)
+
+
+@app.command()
+def complete_key_exchange(
+  expassword: str = typer.Option(None, prompt='Temporary Exchange Password', hide_input=True),
+  exphrase: str = typer.Option(None, prompt='Exchange Phrase'),
+  config_dir: Path = config_dir_opt
+):
+  client = Client(config_dir)
+  client.complete_exchange(expassword, exphrase)
 
 @app.command()
 def version():

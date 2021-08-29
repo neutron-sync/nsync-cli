@@ -12,6 +12,7 @@ import click
 import httpx
 import pendulum
 from cryptography.fernet import Fernet
+from cryptography.hazmat.primitives.kdf.scrypt import Scrypt
 from py_essentials import hashing as hs
 from tabulate import tabulate
 
@@ -19,7 +20,7 @@ from nsync_cli.config import get_config
 from nsync_cli.queries.login import login_query
 from nsync_cli.queries.user import user_query, key_query, save_key
 from nsync_cli.queries.file import save_version_outer, save_version_inner, pull_versions, list_versions
-
+from nsync_cli.queries.exchange import start_exchange, complete_exchange
 
 class Client:
   QUERIES = {
@@ -30,6 +31,8 @@ class Client:
     'save_version': [Template(save_version_outer), Template(save_version_inner)],
     'pull_versions': Template(pull_versions),
     'list_versions': Template(list_versions),
+    'start_exchange': Template(start_exchange),
+    'complete_exchange': Template(complete_exchange),
   }
 
   def __init__(self, config_dir):
@@ -420,3 +423,46 @@ class Client:
       data = self.graphql_batch('save_version', batch)
       self.print('Upload Complete')
       return data
+
+  def start_exchange(self, expassword):
+    self.check_auth()
+
+    salt = os.urandom(16)
+    kdf = Scrypt(salt=salt, length=32, n=2**14, r=8, p=1)
+    key_for_encryption = base64.urlsafe_b64encode(kdf.derive(expassword.encode())).decode()
+    furry = Fernet(key_for_encryption)
+
+    key = self.config['key']['name']
+    salt = base64.b64encode(salt).decode()
+    etext = furry.encrypt(self.config['key']['value'].encode())
+    etext = base64.b64encode(etext).decode()
+
+    data = self.graphql('start_exchange', key=key, salt=salt, etext=etext)
+    self.echo('***Exchange Initialized. Note phrase below expires in 15 minutes.***')
+    self.print('Exchange Phrase: {}'.format(data['data']['startKeyExchange']['phrase']))
+
+  def complete_exchange(self, expassword, phrase):
+    self.check_auth()
+
+    data = self.graphql('complete_exchange', phrase=phrase)['data']['completeKeyExchange']
+    if data['salt'] and data['key'] and data['etext']:
+      salt = base64.b64decode(data['salt'])
+      etext = base64.b64decode(data['etext'])
+      key_name = data['key']
+
+      kdf = Scrypt(salt=salt, length=32, n=2**14, r=8, p=1)
+      key_for_encryption = base64.urlsafe_b64encode(kdf.derive(expassword.encode())).decode()
+      furry = Fernet(key_for_encryption)
+
+      try:
+        key_value = furry.decrypt(etext).decode()
+
+      except:
+        self.error('Invalid encryption password.')
+        sys.exit(1)
+
+      print(key_value)
+
+    else:
+      self.error('Unknown phrase or phrase expired')
+      sys.exit(1)
