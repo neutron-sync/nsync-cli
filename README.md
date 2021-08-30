@@ -35,6 +35,12 @@ Push updated files: `nsync push`
 
 For more documentation see our [wiki](https://github.com/neutron-sync/nsync-cli/wiki).
 
+## Key Exchange
+
+To help speed up the setup of multiple machines, the CLI client supports a key exchange process.
+
+See the [key exchange documentation](https://github.com/neutron-sync/nsync-cli/wiki/Key-Exchange) for more info.
+
 ## Limitation
 
 - Files synced are assumed to be small configuration files. Larger files (>1mb) may choke or slow down sync processes.
