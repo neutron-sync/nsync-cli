@@ -9,6 +9,7 @@ Neutron Sync is a synchronization tool that helps you synchronize your small con
 ```
 sudo -i
 pip3 install nsync-cli
+exit
 ```
 
 ## Usage
