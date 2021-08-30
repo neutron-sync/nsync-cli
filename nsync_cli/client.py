@@ -467,6 +467,7 @@ class Client:
         'value': key_value,
       }
       save_config(self.config_dir, self.config)
+      self.print('Key exchange successful!')
 
     else:
       self.error('Unknown phrase or phrase expired')
