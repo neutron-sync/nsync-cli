@@ -31,7 +31,9 @@ Pull files that need to be updated: `nsync pull`
 
 The `add` command supports file globs like `.ssh/*` and `./ssh/**/*` with the second example being recursive.
 
-Coming Soon: Push updated files `nsync push`
+Push updated files: `nsync push`
+
+For more documentation see our [wiki](https://github.com/neutron-sync/nsync-cli/wiki).
 
 ## Limitation
 
