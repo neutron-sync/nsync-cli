@@ -23,7 +23,7 @@ $qname: saveVersion(input: {
 
 pull_versions = """
 query{
-  syncFiles(first:500) {
+  syncFiles(first:500, key: $key) {
     edges{
       node{
         path
@@ -42,7 +42,7 @@ query{
 
 list_versions = """
 query{
-  syncFiles(first:500) {
+  syncFiles(first:500, key: $key) {
     edges{
       node{
         path

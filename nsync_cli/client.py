@@ -16,7 +16,7 @@ from cryptography.hazmat.primitives.kdf.scrypt import Scrypt
 from py_essentials import hashing as hs
 from tabulate import tabulate
 
-from nsync_cli.config import get_config
+from nsync_cli.config import get_config, save_config
 from nsync_cli.queries.login import login_query
 from nsync_cli.queries.user import user_query, key_query, save_key
 from nsync_cli.queries.file import save_version_outer, save_version_inner, pull_versions, list_versions
@@ -38,6 +38,7 @@ class Client:
   def __init__(self, config_dir):
     self.cookie_path = config_dir / 'cookies.json'
     self.config = get_config(config_dir)
+    self.config_dir = config_dir
     self.cookies = {}
 
     if self.cookie_path.exists():
@@ -177,7 +178,7 @@ class Client:
 
   def list_server(self):
     self.check_auth()
-    data = self.graphql('list_versions')
+    data = self.graphql('list_versions', key=self.config["key"]["name"])
     self.echo(f'List files for key: {self.config["key"]["name"]}')
     table = [['Dir', 'Path', 'Trans', 'Timestamp UTC']]
     for f in data['data']['syncFiles']['edges']:
@@ -200,7 +201,7 @@ class Client:
     self.check_auth()
     furry = Fernet(self.config['key']['value'])
 
-    data = self.graphql('pull_versions')
+    data = self.graphql('pull_versions', key=self.config['key']['name'])
     pushing = {}
     missing = {}
     for f in data['data']['syncFiles']['edges']:
@@ -279,7 +280,7 @@ class Client:
     for p in paths:
       local_paths[self.shrink_path(p)] = p
 
-    data = self.graphql('pull_versions')
+    data = self.graphql('pull_versions', key=self.config['key']['name'])
     pulling = {}
     for f in data['data']['syncFiles']['edges']:
       file = f['node']
@@ -461,7 +462,11 @@ class Client:
         self.error('Invalid encryption password.')
         sys.exit(1)
 
-      print(key_value)
+      self.config['key'] = {
+        'name': key_name,
+        'value': key_value,
+      }
+      save_config(self.config_dir, self.config)
 
     else:
       self.error('Unknown phrase or phrase expired')
