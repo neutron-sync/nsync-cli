@@ -5,6 +5,7 @@ query {
       node{
         username
         id
+        hasCredit
       }
     }
   }

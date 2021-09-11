@@ -142,6 +142,11 @@ class Client:
       self.error('Login required')
       sys.exit(1)
 
+    if not data['data']['users']['edges'][0]['node']['hasCredit']:
+      self.error('Your credit has expired. Please subscribe to continue.')
+      self.error('Go to: {}'.format(self.config['server_url']))
+      sys.exit(1)
+
     return user
 
   def check_key(self, name):
