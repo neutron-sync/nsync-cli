@@ -38,3 +38,16 @@ mutation {
   }
 }
 """
+
+last_transaction = """
+query {
+  fileTransactions (first: 1) {
+    edges{
+      node {
+        id
+        intId
+      }
+    }
+  }
+}
+"""

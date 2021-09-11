@@ -4,11 +4,32 @@ import os
 DEFAULT_SERVER_URL = 'https://www.neutronsync.com'
 
 
+def set_defaults(data):
+  if 'last_transction' not in data:
+    data['last_transction'] = None
+
+  if 'expansions' not in data:
+    data['expansions'] = {'HOME': os.environ['HOME']}
+
+  if 'backups' not in data:
+    data['backups'] = True
+
+  if 'backup_suffix' not in data:
+    data['backup_suffix'] = '.backup'
+
+  if 'extensions_ignore' not in data:
+    data['extensions_ignore'] = ['.backup']
+
+  return data
+
+
 def get_config(config_dir):
   config_path = config_dir / 'config.json'
   if config_path.exists():
     with config_path.open('r') as fh:
-      return json.loads(fh.read())
+      data = json.loads(fh.read())
+      data = set_defaults(data)
+      return data
 
   return {
     'server_url': DEFAULT_SERVER_URL,
@@ -16,6 +37,7 @@ def get_config(config_dir):
     'backups': True,
     'backup_suffix': '.backup',
     'extensions_ignore': ['.backup'],
+    'last_transction': None,
   }
 
 

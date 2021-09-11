@@ -23,6 +23,14 @@ $qname: saveVersion(input: {
 
 pull_versions = """
 query{
+  fileTransactions (first: 1) {
+    edges{
+      node {
+        id
+        intId
+      }
+    }
+  }
   syncFiles(first:500, key: $key) {
     edges{
       node{

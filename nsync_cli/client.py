@@ -18,7 +18,7 @@ from tabulate import tabulate
 
 from nsync_cli.config import get_config, save_config
 from nsync_cli.queries.login import login_query
-from nsync_cli.queries.user import user_query, key_query, save_key
+from nsync_cli.queries.user import user_query, key_query, save_key, last_transaction
 from nsync_cli.queries.file import save_version_outer, save_version_inner, pull_versions, list_versions
 from nsync_cli.queries.exchange import start_exchange, complete_exchange
 
@@ -28,6 +28,7 @@ class Client:
     'user': Template(user_query),
     'key': Template(key_query),
     'save_key': Template(save_key),
+    'last_transaction': Template(last_transaction),
     'save_version': [Template(save_version_outer), Template(save_version_inner)],
     'pull_versions': Template(pull_versions),
     'list_versions': Template(list_versions),
@@ -149,6 +150,36 @@ class Client:
 
     return user
 
+  def get_last_transaction(self):
+    local_last = None
+    remote_last = None
+
+    if self.config['last_transction']:
+      local_last = self.config['last_transction']
+
+    data = self.graphql('last_transaction')
+    if data['data']['fileTransactions']['edges']:
+      remote_last = data['data']['fileTransactions']['edges'][0]['node']['intId']
+
+    return local_last, remote_last
+
+  def set_last_transaction(self, remote_last=None):
+    if remote_last is None:
+      pulling, remote_last = self.pull_data([])
+      if pulling:
+        return
+
+    if remote_last:
+      self.config['last_transction'] = remote_last
+      save_config(self.config_dir, self.config)
+
+  def check_transaction(self):
+    local_last, remote_last = self.get_last_transaction()
+    if local_last != remote_last:
+      self.echo(f'Last Transactions\n  Local: {local_last}    Remote: {remote_last}\n')
+      self.error('Pull the latest transaction before continuing.')
+      sys.exit(1)
+
   def check_key(self, name):
     self.check_auth()
 
@@ -181,8 +212,11 @@ class Client:
 
     return Path(p)
 
-  def list_server(self):
+  def status(self):
     self.check_auth()
+    local_last, remote_last = self.get_last_transaction()
+    self.echo(f'Last Transactions\n  Local: {local_last}    Remote: {remote_last}\n')
+
     data = self.graphql('list_versions', key=self.config["key"]["name"])
     self.echo(f'List files for key: {self.config["key"]["name"]}')
     table = [['Dir', 'Path', 'Trans', 'Timestamp UTC']]
@@ -204,6 +238,7 @@ class Client:
 
   def push(self, confirmed=False):
     self.check_auth()
+    self.check_transaction()
     furry = Fernet(self.config['key']['value'])
 
     data = self.graphql('pull_versions', key=self.config['key']['name'])
@@ -277,15 +312,14 @@ class Client:
       self.echo('Nothing to push')
 
 
-  def pull_paths(self, paths, force=False, confirmed=False):
-    self.check_auth()
+  def pull_data(self, paths, force=False):
     furry = Fernet(self.config['key']['value'])
-
     local_paths = {}
     for p in paths:
       local_paths[self.shrink_path(p)] = p
 
     data = self.graphql('pull_versions', key=self.config['key']['name'])
+    remote_last = data['data']['fileTransactions']['edges'][0]['node']['intId']
     pulling = {}
     for f in data['data']['syncFiles']['edges']:
       file = f['node']
@@ -332,6 +366,13 @@ class Client:
           version['local'] = local_path
           pulling[file['path']] = version
 
+    return pulling, remote_last
+
+  def pull_paths(self, paths, force=False, confirmed=False):
+    self.check_auth()
+    furry = Fernet(self.config['key']['value'])
+
+    pulling, remote_last = self.pull_data(paths, force)
     if pulling:
       self.echo('Pulling Files:')
       table = []
@@ -367,7 +408,10 @@ class Client:
           ts = pendulum.parse(v['timestamp']).timestamp()
           os.utime(v['local'], (ts, ts))
 
+        self.set_last_transaction()
+
     else:
+      self.set_last_transaction(remote_last)
       self.echo('Nothing to pull')
 
   def prepare_upload(self, p, furry):

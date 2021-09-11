@@ -43,9 +43,9 @@ key_path_arg = typer.Argument(
 
 
 @app.command()
-def list_remote(config_dir: Path = config_dir_opt):
+def status(config_dir: Path = config_dir_opt):
   client = Client(config_dir)
-  client.list_server()
+  client.status()
 
 
 @app.command()
