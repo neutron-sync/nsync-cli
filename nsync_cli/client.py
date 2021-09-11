@@ -167,6 +167,7 @@ class Client:
     if remote_last is None:
       pulling, remote_last = self.pull_data([])
       if pulling:
+        self.echo('{} Files Out of Sync'.format(len(pulling)))
         return
 
     if remote_last:
@@ -219,22 +220,54 @@ class Client:
 
     data = self.graphql('list_versions', key=self.config["key"]["name"])
     self.echo(f'List files for key: {self.config["key"]["name"]}')
-    table = [['Dir', 'Path', 'Trans', 'Timestamp UTC']]
+    table = [['Dir', 'Path', 'Trans', 'Timestamp UTC', 'Status']]
     for f in data['data']['syncFiles']['edges']:
       file = f['node']
       version = file['latestVersion']
 
       if version:
         local_path = self.expand_path(file['path'])
-        dt = pendulum.parse(version['created']).to_rfc1123_string()[:-6]
+        local_modified = None
+        local_hash = None
+        local_perms = None
+        if local_path.exists():
+          fstats = local_path.stat()
+          local_modified = datetime.datetime.fromtimestamp(fstats.st_mtime, tz=datetime.timezone.utc)
+          local_perms = stat.S_IMODE(fstats.st_mode)
+          if not local_path.is_dir():
+            local_hash = hs.fileChecksum(local_path, algorithm='sha256')
+
+        remote_ts = pendulum.parse(version['created'])
+        dt = remote_ts.to_rfc1123_string()[:-6]
         t = base64.b64decode(version['transaction']['id'].encode()).decode().split(':')[-1]
-        if version['isDir']:
-          table.append(['d', local_path, t, dt])
+
+        if local_modified:
+          if local_hash == version['uhash']:
+            reason = 'in sync'
+
+            if local_perms != version['permissions']:
+              reason = 'permissions inconsistent'
+
+          elif local_modified > remote_ts:
+            reason = 'modifed after remote'
+
+          elif local_modified < remote_ts:
+            reason = 'older than remote'
+
+          else:
+            reason = 'contents out of sync'
 
         else:
-          table.append(['', local_path, t, dt])
+          reason = 'does not exist'
+
+        if version['isDir']:
+          table.append(['d', local_path, t, dt, reason])
+
+        else:
+          table.append(['', local_path, t, dt, reason])
 
     self.echo(tabulate(table))
+    self.set_last_transaction()
 
   def push(self, confirmed=False):
     self.check_auth()
@@ -261,7 +294,13 @@ class Client:
           if not local_path.is_dir():
             local_hash = hs.fileChecksum(local_path, algorithm='sha256')
 
-          if version['uhash'] != local_hash:
+          if local_hash == version['uhash']:
+            if local_perms != version['permissions']:
+              version['reason'] = 'Permissions inconsistent'
+              version['local'] = local_path
+              pushing[file['path']] = version
+
+          else:
             remote_ts = pendulum.parse(version['timestamp'])
             if local_modified > remote_ts:
               version['reason'] = 'modifed after remote'
@@ -272,11 +311,6 @@ class Client:
             else:
               version['reason'] = 'contents out of sync'
 
-            version['local'] = local_path
-            pushing[file['path']] = version
-
-          elif version['permissions'] != local_perms:
-            version['reason'] = 'Permissions inconsistent'
             version['local'] = local_path
             pushing[file['path']] = version
 
@@ -340,7 +374,23 @@ class Client:
           if not local_path.is_dir():
             local_hash = hs.fileChecksum(local_path, algorithm='sha256')
 
-        if version['uhash'] != local_hash or force:
+        if local_hash == version['uhash']:
+          if force:
+            version['reason'] = 'forced sync'
+            version['local'] = local_path
+            pulling[file['path']] = version
+
+          if local_perms != version['permissions']:
+            if local_path.exists():
+              version['reason'] = 'Permissions inconsistent'
+
+            else:
+              version['reason'] = 'Does not exist'
+
+            version['local'] = local_path
+            pulling[file['path']] = version
+
+        else:
           remote_ts = pendulum.parse(version['timestamp'])
           if local_modified is None:
             version['reason'] = 'Does not exist'
@@ -352,17 +402,8 @@ class Client:
             version['reason'] = 'older than remote'
 
           else:
-            if force:
-              version['reason'] = 'forced sync'
+            version['reason'] = 'contents out of sync'
 
-            else:
-              version['reason'] = 'contents out of sync'
-
-          version['local'] = local_path
-          pulling[file['path']] = version
-
-        elif version['permissions'] != local_perms:
-          version['reason'] = 'Permissions inconsistent'
           version['local'] = local_path
           pulling[file['path']] = version
 
@@ -411,8 +452,8 @@ class Client:
         self.set_last_transaction()
 
     else:
-      self.set_last_transaction(remote_last)
       self.echo('Nothing to pull')
+      self.set_last_transaction()
 
   def prepare_upload(self, p, furry):
     upload_path = self.shrink_path(p)
@@ -472,6 +513,7 @@ class Client:
     if confirmed or click.confirm('Do you want to continue?'):
       data = self.graphql_batch('save_version', batch)
       self.print('Upload Complete')
+      self.set_last_transaction()
       return data
 
   def start_exchange(self, expassword):

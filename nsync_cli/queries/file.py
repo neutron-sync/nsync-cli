@@ -58,6 +58,9 @@ query{
           isDir
           timestamp
           created
+          permissions
+          uhash
+          isDir
           transaction{
             id
           }
