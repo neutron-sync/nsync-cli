@@ -41,28 +41,10 @@ query{
           timestamp
           uhash
           isDir
-        }
-      }
-    }
-  }
-}
-"""
-
-list_versions = """
-query{
-  syncFiles(first:500, key: $key) {
-    edges{
-      node{
-        path
-        latestVersion{
-          isDir
-          timestamp
           created
-          permissions
-          uhash
-          isDir
-          transaction{
+          transaction {
             id
+            intId
           }
         }
       }
