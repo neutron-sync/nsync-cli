@@ -221,7 +221,7 @@ class Client:
     table = [['Dir', 'Path', 'Trans', 'Timestamp UTC', 'Local Status']]
     pulling, remote_last = self.pull_data([], always_reason=True)
     for remote, v in pulling.items():
-      dt = pendulum.parse(v['created']).to_rfc1123_string()[:-6]
+      dt = pendulum.parse(v['timestamp']).to_rfc1123_string()[:-6]
 
       if v['isDir']:
         table.append(['d', v['local'], v['transaction']['intId'], dt, v['reason']])
