@@ -324,8 +324,11 @@ class Client:
       local_paths[self.shrink_path(p)] = p
 
     data = self.graphql('pull_versions', key=self.config['key']['name'])
-    remote_last = data['data']['fileTransactions']['edges'][0]['node']['intId']
     pulling = {}
+    if not data['data']['fileTransactions']['edges']:
+      return pulling, None
+
+    remote_last = data['data']['fileTransactions']['edges'][0]['node']['intId']
     for f in data['data']['syncFiles']['edges']:
       file = f['node']
       version = file['latestVersion']
@@ -479,7 +482,7 @@ class Client:
       batch.append(self.prepare_upload(p, furry))
 
     if not batch:
-      self.echo('Nothing to push')
+      self.echo('Nothing to add')
       return
 
     self.echo('Pushing Files:')

@@ -15,6 +15,7 @@ import typer
 import nsync_cli
 from nsync_cli.config import get_config, save_config
 from nsync_cli.client import Client
+from nsync_cli.glob import glob
 
 app = typer.Typer()
 
@@ -69,9 +70,8 @@ def pull(
 ):
   paths = []
   for g in path_glob:
-    found = glob.glob(g, recursive=True)
+    found = glob.glob(g)
     for p in found:
-      p = Path(os.path.abspath(p))
       if p.is_symlink():
         pass
 
@@ -90,9 +90,8 @@ def add(
 ):
   paths = []
   for g in path_glob:
-    found = glob.glob(g, recursive=True)
+    found = glob.glob(g)
     for p in found:
-      p = Path(os.path.abspath(p))
       if p.is_symlink():
         pass
 

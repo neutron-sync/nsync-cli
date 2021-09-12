@@ -220,7 +220,7 @@ version = "0.31.0"
 summary = "A formatter for Python code."
 
 [metadata]
-lock_version = "3"
+lock_version = "3.1"
 content_hash = "sha256:f8087ce3a413877d2cd757a811ad6d9c69545508acefe875ea69d40c24445567"
 
 [metadata.files]
