@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import glob
 import os
 import sys
 
@@ -15,7 +14,7 @@ import typer
 import nsync_cli
 from nsync_cli.config import get_config, save_config
 from nsync_cli.client import Client
-from nsync_cli.glob import glob
+from nsync_cli.globber import get_paths
 
 app = typer.Typer()
 
@@ -70,7 +69,7 @@ def pull(
 ):
   paths = []
   for g in path_glob:
-    found = glob.glob(g)
+    found = get_paths(g)
     for p in found:
       if p.is_symlink():
         pass
@@ -90,7 +89,7 @@ def add(
 ):
   paths = []
   for g in path_glob:
-    found = glob.glob(g)
+    found = get_paths(g)
     for p in found:
       if p.is_symlink():
         pass

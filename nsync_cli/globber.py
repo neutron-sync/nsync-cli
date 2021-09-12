@@ -1,12 +1,25 @@
 import os
+import glob
+
 from pathlib import Path
 
-def glob(path_glob):
+def get_paths(path_glob):
+	paths = glob.glob(path_glob, recursive=True)
+	ret = []
+	for p in paths:
+		p = Path(p)
+		if not p.is_absolute():
+			p = p.resolve()
+
+		ret.append(p)
+
+	return ret
+
 	if '*' in path_glob:
 		path = Path(path_glob)
 		if path.is_absolute():
 			parts = path_glob.split(os.sep)
-			abs_parts = ['']
+			abs_parts = []
 			glob_parts = []
 
 			for p in parts:

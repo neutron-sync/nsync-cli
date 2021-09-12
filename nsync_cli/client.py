@@ -469,8 +469,9 @@ class Client:
 
     batch = []
     furry = Fernet(self.config['key']['value'])
-    ignore = False
     for p in paths:
+      ignore = False
+
       for ext in self.config['extensions_ignore']:
         if ext in p.suffixes:
           ignore = True
