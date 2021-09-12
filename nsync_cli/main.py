@@ -43,9 +43,12 @@ key_path_arg = typer.Argument(
 
 
 @app.command()
-def status(config_dir: Path = config_dir_opt):
+def status(
+  all: bool = typer.Option(False, "--all", help="Display all file states, even in sync."),
+  config_dir: Path = config_dir_opt,
+):
   client = Client(config_dir)
-  client.status()
+  client.status(all)
 
 
 @app.command()

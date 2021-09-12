@@ -212,24 +212,31 @@ class Client:
 
     return Path(p)
 
-  def status(self):
+  def status(self, show_all=False):
     self.check_auth()
     local_last, remote_last = self.get_last_transaction()
     self.echo(f'Last Transactions\n  Local: {local_last}    Remote: {remote_last}\n')
 
-    self.echo(f'List files for key: {self.config["key"]["name"]}')
-    table = [['Dir', 'Path', 'Trans', 'Timestamp UTC', 'Local Status']]
+    headers = ['Dir', 'Path', 'Trans', 'Timestamp UTC', 'Local Status']
+    table = []
     pulling, remote_last = self.pull_data([], always_reason=True)
     for remote, v in pulling.items():
       dt = pendulum.parse(v['timestamp']).to_rfc1123_string()[:-6]
 
-      if v['isDir']:
-        table.append(['d', v['local'], v['transaction']['intId'], dt, v['reason']])
+      if show_all or v['reason'] != 'in sync':
+        if v['isDir']:
+          table.append(['d', v['local'], v['transaction']['intId'], dt, v['reason']])
 
-      else:
-        table.append(['', v['local'], v['transaction']['intId'], dt, v['reason']])
+        else:
+          table.append(['', v['local'], v['transaction']['intId'], dt, v['reason']])
 
-    self.echo(tabulate(table))
+    if table:
+      self.echo(f'List files for key: {self.config["key"]["name"]}')
+      self.echo(tabulate(table, headers))
+
+    else:
+      self.print('Everything in Sync')
+
     self.set_last_transaction()
 
   def push(self, confirmed=False):
@@ -272,7 +279,7 @@ class Client:
               version['reason'] = 'older than remote'
 
             else:
-              version['reason'] = 'contents out of sync'
+              version['reason'] = 'out of sync'
 
             version['local'] = local_path
             pushing[file['path']] = version
@@ -362,7 +369,7 @@ class Client:
         else:
           remote_ts = pendulum.parse(version['timestamp'])
           if local_modified is None:
-            version['reason'] = 'Does not exist'
+            version['reason'] = 'does not exist'
 
           elif local_modified > remote_ts:
             version['reason'] = 'modifed after remote'
@@ -371,7 +378,7 @@ class Client:
             version['reason'] = 'older than remote'
 
           else:
-            version['reason'] = 'contents out of sync'
+            version['reason'] = 'out of sync'
 
           version['local'] = local_path
           pulling[file['path']] = version
