@@ -41,7 +41,8 @@ nsync add path/to/file
 nsync pull
 
 # Add files to sync
-# add command supports file globs like ".ssh/*" and "./ssh/**/*" with the second example being recursive.
+# add command supports file globs like ".ssh/*" and "./ssh/**/*"
+# with the second example being recursive.
 nsync add "./ssh/**/*"
 
 # Push updated files
