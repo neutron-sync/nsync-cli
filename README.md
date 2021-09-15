@@ -15,10 +15,10 @@ Neutron Sync is a synchronization tool that helps you synchronize your small con
 ## Installation
 
 ```
-sudo -i
-pip3 install nsync-cli
-exit
+pipx install nsync-cli
 ```
+
+*pipx recommend but pip install also works*
 
 ## Usage
 
@@ -33,13 +33,20 @@ nsync keygen
 
 ### Everyday Usage
 
-Add new files to sync: `nsync add path/to/file`
+```
+# Add new files to sync
+nsync add path/to/file
 
-Pull files that need to be updated: `nsync pull`
+# Pull files that need to be updated
+nsync pull
 
-The `add` command supports file globs like `.ssh/*` and `./ssh/**/*` with the second example being recursive.
+# Add files to sync
+# add command supports file globs like ".ssh/*" and "./ssh/**/*" with the second example being recursive.
+nsync add "./ssh/**/*"
 
-Push updated files: `nsync push`
+# Push updated files
+nsync push
+```
 
 For more documentation see our [wiki](https://github.com/neutron-sync/nsync-cli/wiki).
 
