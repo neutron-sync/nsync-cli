@@ -18,7 +18,7 @@ Neutron Sync is a synchronization tool that helps you synchronize your small con
 pipx install nsync-cli
 ```
 
-*pipx recommend but pip install also works*
+*pipx recommended but pip install also works*
 
 ## Usage
 
