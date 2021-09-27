@@ -60,7 +60,6 @@ See the [key exchange documentation](https://github.com/neutron-sync/nsync-cli/w
 ## Limitation
 
 - Files synced are assumed to be small configuration files. Larger files (>1mb) may choke or slow down sync processes.
-- The client only supports a limit of 500 files to sync right now.
 
 ## Open Source
 
