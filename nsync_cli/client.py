@@ -19,7 +19,7 @@ from tabulate import tabulate
 from nsync_cli.config import get_config, save_config
 from nsync_cli.queries.login import login_query
 from nsync_cli.queries.user import user_query, key_query, save_key, last_transaction
-from nsync_cli.queries.file import save_version_outer, save_version_inner, pull_versions
+from nsync_cli.queries.file import save_version_outer, save_version_inner, pull_versions, pull_versions_page
 from nsync_cli.queries.exchange import start_exchange, complete_exchange
 
 class Client:
@@ -31,6 +31,7 @@ class Client:
     'last_transaction': Template(last_transaction),
     'save_version': [Template(save_version_outer), Template(save_version_inner)],
     'pull_versions': Template(pull_versions),
+    'pull_versions_page': Template(pull_versions_page),
     'start_exchange': Template(start_exchange),
     'complete_exchange': Template(complete_exchange),
   }
@@ -239,12 +240,37 @@ class Client:
 
     self.set_last_transaction()
 
+  def pull_with_pagination(self, key):
+    end_cursor = None
+    data = None
+
+    while 1:
+      if end_cursor:
+        page = self.graphql('pull_versions_page', key=key, after=end_cursor)
+
+      else:
+        page = self.graphql('pull_versions', key=key)
+
+      if data is None:
+        data = page
+
+      else:
+        data['data']['syncFiles']['edges'].extend(
+          page['data']['syncFiles']['edges']
+        )
+
+      if page['data']['syncFiles']['pageInfo']['hasNextPage']:
+        end_cursor = page['data']['syncFiles']['pageInfo']['endCursor']
+
+      else:
+        return data
+
   def push(self, confirmed=False):
     self.check_auth()
     self.check_transaction()
     furry = Fernet(self.config['key']['value'])
 
-    data = self.graphql('pull_versions', key=self.config['key']['name'])
+    data = self.pull_with_pagination(self.config['key']['name'])
     pushing = {}
     missing = {}
     for f in data['data']['syncFiles']['edges']:
@@ -323,7 +349,7 @@ class Client:
     for p in paths:
       local_paths[self.shrink_path(p)] = p
 
-    data = self.graphql('pull_versions', key=self.config['key']['name'])
+    data = self.pull_with_pagination(self.config['key']['name'])
     pulling = {}
     if not data['data']['fileTransactions']['edges']:
       return pulling, None

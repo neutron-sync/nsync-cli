@@ -31,7 +31,7 @@ query{
       }
     }
   }
-  syncFiles(first:500, key: $key) {
+  syncFiles(first:50, key: $key) {
     edges{
       node{
         path
@@ -48,6 +48,40 @@ query{
           }
         }
       }
+    }
+    pageInfo{
+      startCursor
+      endCursor
+      hasNextPage
+    }
+  }
+}
+"""
+
+pull_versions_page = """
+query{
+  syncFiles(first:50, key: $key, after: $after) {
+    edges{
+      node{
+        path
+        latestVersion{
+          download
+          permissions
+          timestamp
+          uhash
+          isDir
+          created
+          transaction {
+            id
+            intId
+          }
+        }
+      }
+    }
+    pageInfo{
+      startCursor
+      endCursor
+      hasNextPage
     }
   }
 }
