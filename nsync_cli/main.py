@@ -54,7 +54,7 @@ def status(
 @app.command()
 def push(
     config_dir: Path = config_dir_opt,
-    confirmed: bool = typer.Option(False, "--confirmed", help="Continue skipping cofirmations"),
+    confirmed: bool = typer.Option(False, "--confirmed", help="Continue skipping confirmations"),
 ):
   client = Client(config_dir)
   data = client.push(confirmed)
@@ -65,7 +65,7 @@ def pull(
     path_glob: List[str] = typer.Argument(None),
     config_dir: Path = config_dir_opt,
     force: bool = typer.Option(False, "--force", help="Force all files to down"),
-    confirmed: bool = typer.Option(False, "--confirmed", help="Continue skipping cofirmations"),
+    confirmed: bool = typer.Option(False, "--confirmed", help="Continue skipping confirmations"),
 ):
   paths = []
   for g in path_glob:
@@ -85,7 +85,7 @@ def pull(
 def add(
     path_glob: List[str],
     config_dir: Path = config_dir_opt,
-    confirmed: bool = typer.Option(False, "--confirmed", help="Continue skipping cofirmations"),
+    confirmed: bool = typer.Option(False, "--confirmed", help="Continue skipping confirmations"),
 ):
   paths = []
   for g in path_glob:
