@@ -47,3 +47,4 @@ def save_config(config_dir, config):
     fh.write(json.dumps(config, indent=2))
 
   config_path.chmod(0o600)
+  config_dir.chmod(0o700)

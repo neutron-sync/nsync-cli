@@ -70,6 +70,7 @@ class Client:
       fh.write(json.dumps(dict(self.last_response.cookies), indent=2))
 
     self.cookie_path.chmod(0o600)
+    self.cookie_path.parent.chmod(0o700)
 
   @staticmethod
   def set_types(params):
