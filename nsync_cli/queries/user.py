@@ -45,7 +45,7 @@ query {
     edges{
       node {
         id
-        intId
+        rawId
       }
     }
   }

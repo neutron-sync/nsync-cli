@@ -160,7 +160,7 @@ class Client:
 
     data = self.graphql('last_transaction')
     if data['data']['fileTransactions']['edges']:
-      remote_last = data['data']['fileTransactions']['edges'][0]['node']['intId']
+      remote_last = data['data']['fileTransactions']['edges'][0]['node']['rawId']
 
     return local_last, remote_last
 
@@ -219,7 +219,7 @@ class Client:
     local_last, remote_last = self.get_last_transaction()
     self.echo(f'Last Transactions\n  Local: {local_last}    Remote: {remote_last}\n')
 
-    headers = ['Dir', 'Path', 'Trans', 'Timestamp UTC', 'Local Status']
+    headers = ['File', 'Vers', 'Dir', 'Path', 'Trans', 'Timestamp UTC', 'Local Status']
     table = []
     pulling, remote_last = self.pull_data([], always_reason=True)
     for remote, v in pulling.items():
@@ -227,10 +227,10 @@ class Client:
 
       if show_all or v['reason'] != 'in sync':
         if v['isDir']:
-          table.append(['d', v['local'], v['transaction']['intId'], dt, v['reason']])
+          table.append([v['fileId'], v['rawId'], 'd', v['local'], v['transaction']['rawId'], dt, v['reason']])
 
         else:
-          table.append(['', v['local'], v['transaction']['intId'], dt, v['reason']])
+          table.append([v['fileId'], v['rawId'], '', v['local'], v['transaction']['rawId'], dt, v['reason']])
 
     if table:
       self.echo(f'List files for key: {self.config["key"]["name"]}')
@@ -355,10 +355,11 @@ class Client:
     if not data['data']['fileTransactions']['edges']:
       return pulling, None
 
-    remote_last = data['data']['fileTransactions']['edges'][0]['node']['intId']
+    remote_last = data['data']['fileTransactions']['edges'][0]['node']['rawId']
     for f in data['data']['syncFiles']['edges']:
       file = f['node']
       version = file['latestVersion']
+      version['fileId'] = file['rawId']
 
       if local_paths and file['path'] not in local_paths:
         continue

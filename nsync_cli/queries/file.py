@@ -27,7 +27,7 @@ query{
     edges{
       node {
         id
-        intId
+        rawId
       }
     }
   }
@@ -35,7 +35,9 @@ query{
     edges{
       node{
         path
+        rawId
         latestVersion{
+          rawId
           download
           permissions
           timestamp
@@ -44,7 +46,7 @@ query{
           created
           transaction {
             id
-            intId
+            rawId
           }
         }
       }
