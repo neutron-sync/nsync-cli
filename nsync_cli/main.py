@@ -29,16 +29,7 @@ config_dir_opt = typer.Option(
   writable=True,
   readable=True,
   resolve_path=True,
-)
-
-key_path_arg = typer.Argument(
-  CONFIG_DIR / 'key.txt',
-  exists=False,
-  file_okay=True,
-  dir_okay=False,
-  writable=True,
-  readable=True,
-  resolve_path=True,
+  envvar="NSYNC_CONFIG_DIR"
 )
 
 
