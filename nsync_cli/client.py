@@ -20,6 +20,7 @@ from nsync_cli.config import get_config, save_config
 from nsync_cli.queries.login import login_query
 from nsync_cli.queries.user import user_query, key_query, save_key, last_transaction
 from nsync_cli.queries.file import save_version_outer, save_version_inner, pull_versions, pull_versions_page
+from nsync_cli.queries.delete import delete_item
 from nsync_cli.queries.exchange import start_exchange, complete_exchange
 
 class Client:
@@ -28,6 +29,7 @@ class Client:
     'user': Template(user_query),
     'key': Template(key_query),
     'save_key': Template(save_key),
+    'delete_item': Template(delete_item),
     'last_transaction': Template(last_transaction),
     'save_version': [Template(save_version_outer), Template(save_version_inner)],
     'pull_versions': Template(pull_versions),
@@ -491,6 +493,18 @@ class Client:
       'ebody': ebody,
       'original_path': p,
     }
+
+  def delete(self, item_type, item_id, confirmed):
+    self.check_auth()
+
+    if confirmed or click.confirm(f'Are you sure you want to delete {item_type}:{item_id}?'):
+      data = self.graphql('delete_item', item_type=item_type, item_id=item_id)
+      if (data['data']['deleteItem']['success']):
+        self.print(f"Deleted Successfully {item_type}:{item_id}")
+
+      else:
+        self.error(f"Not Found {item_type}:{item_id}")
+        sys.exit(1)
 
   def add_paths(self, paths, confirmed):
     self.check_auth()

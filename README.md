@@ -20,6 +20,13 @@ pipx install nsync-cli
 
 *pipx recommended but pip install also works*
 
+
+## Upgrade
+
+```
+pipx upgrade nsync-cli
+```
+
 ## Usage
 
 ### One Time Setup

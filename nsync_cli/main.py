@@ -110,6 +110,17 @@ def add(
 
 
 @app.command()
+def delete(
+    item_type: str,
+    item_id: str,
+    config_dir: Path = config_dir_opt,
+    confirmed: bool = typer.Option(False, "--confirmed", help="Continue skipping confirmations"),
+):
+  client = Client(config_dir)
+  client.delete(item_type, item_id, confirmed)
+
+
+@app.command()
 def login(
     username: str = typer.Option(None, prompt=True),
     password: str = typer.Option(None, prompt=True, hide_input=True),
