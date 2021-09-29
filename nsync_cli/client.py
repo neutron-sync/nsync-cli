@@ -134,8 +134,13 @@ class Client:
     return data
 
   def login(self, username, password):
-    self.graphql('login', username=username, password=password)
-    self.print('Login Successful')
+    data = self.graphql('login', username=username, password=password)
+    if data['data']['login']['user']:
+      self.print('Login Successful')
+
+    else:
+      self.error('Login Failed')
+      sys.exit(1)
 
   def check_auth(self):
     data = self.graphql('user')
