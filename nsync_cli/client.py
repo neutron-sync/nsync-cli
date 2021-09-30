@@ -249,23 +249,36 @@ class Client:
 
     self.set_last_transaction()
 
-  def view_version(self, version_id):
+  def view_version(self, version_id, show=False):
     self.check_auth()
     data = self.graphql('view_version', version_id=version_id)
 
     if data['data']['fileVersions']['edges']:
       version = data['data']['fileVersions']['edges'][0]['node']
-      self.echo("File: {}".format(version['syncFile']['path']))
-      self.echo("Version: {}".format(version['rawId']))
-      response = httpx.get(version['download'])
-      self.echo('Encrypted Text:')
-      ebody = base64.b64decode(response.content)
-      self.echo(ebody.decode())
 
-      self.echo('\nUnencrypted Text:')
-      furry = Fernet(self.config['key']['value'])
-      body = furry.decrypt(ebody)
-      self.echo(body.decode())
+      if version['isDir']:
+        self.echo(f"Directory: {version['syncFile']['path']}")
+
+      else:
+        self.echo(f"File: {version['syncFile']['path']}")
+
+      self.echo(f"Version: {version['rawId']}")
+      self.echo(f"Permissions: {version['linuxPerm']}")
+      self.echo(f"Timestamp: {version['timestamp']}")
+
+      if version['isDir']:
+        return
+
+      if show:
+        response = httpx.get(version['download'])
+        self.echo('\nEncrypted Text:')
+        ebody = base64.b64decode(response.content)
+        self.echo(ebody.decode())
+
+        self.echo('\nUnencrypted Text:')
+        furry = Fernet(self.config['key']['value'])
+        body = furry.decrypt(ebody)
+        self.echo(body.decode())
 
     else:
       self.error(f'Not found version:{version_id}')

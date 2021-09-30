@@ -163,9 +163,13 @@ def complete_key_exchange(
 
 
 @app.command()
-def view_version(version_id: int, config_dir: Path = config_dir_opt):
+def view_version(
+  version_id: int,
+  show: bool = typer.Option(False, "--show", help="Show contents of the file"),
+  config_dir: Path = config_dir_opt
+):
   client = Client(config_dir)
-  client.view_version(version_id)
+  client.view_version(version_id, show)
 
 
 @app.command()

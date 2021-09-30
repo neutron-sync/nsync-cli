@@ -96,6 +96,9 @@ query {
       node{
         download
         rawId
+        isDir
+        linuxPerm
+        timestamp
         syncFile{
           id
           path
