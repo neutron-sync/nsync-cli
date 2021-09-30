@@ -19,7 +19,7 @@ from tabulate import tabulate
 from nsync_cli.config import get_config, save_config
 from nsync_cli.queries.login import login_query
 from nsync_cli.queries.user import user_query, key_query, save_key, last_transaction
-from nsync_cli.queries.file import save_version_outer, save_version_inner, pull_versions, pull_versions_page
+from nsync_cli.queries.file import save_version_outer, save_version_inner, pull_versions, pull_versions_page, view_version
 from nsync_cli.queries.delete import delete_item
 from nsync_cli.queries.exchange import start_exchange, complete_exchange
 
@@ -34,6 +34,7 @@ class Client:
     'save_version': [Template(save_version_outer), Template(save_version_inner)],
     'pull_versions': Template(pull_versions),
     'pull_versions_page': Template(pull_versions_page),
+    'view_version': Template(view_version),
     'start_exchange': Template(start_exchange),
     'complete_exchange': Template(complete_exchange),
   }
@@ -247,6 +248,28 @@ class Client:
       self.print('Everything in Sync')
 
     self.set_last_transaction()
+
+  def view_version(self, version_id):
+    self.check_auth()
+    data = self.graphql('view_version', version_id=version_id)
+
+    if data['data']['fileVersions']['edges']:
+      version = data['data']['fileVersions']['edges'][0]['node']
+      self.echo("File: {}".format(version['syncFile']['path']))
+      self.echo("Version: {}".format(version['rawId']))
+      response = httpx.get(version['download'])
+      self.echo('Encrypted Text:')
+      ebody = base64.b64decode(response.content)
+      self.echo(ebody.decode())
+
+      self.echo('\nUnencrypted Text:')
+      furry = Fernet(self.config['key']['value'])
+      body = furry.decrypt(ebody)
+      self.echo(body.decode())
+
+    else:
+      self.error(f'Not found version:{version_id}')
+      sys.exit(1)
 
   def pull_with_pagination(self, key):
     end_cursor = None

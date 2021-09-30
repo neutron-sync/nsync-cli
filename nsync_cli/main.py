@@ -137,7 +137,6 @@ def keygen(
 
   config['key'] = {'name': key_name, 'value': key}
   save_config(config_dir, config)
-  secho(f'Saved Key: {key}')
   secho('!!! Don\'t Lose Your Config File and Key: {}'.format(config_dir / 'config.json'))
 
   client.register_key(key_name)
@@ -162,9 +161,17 @@ def complete_key_exchange(
   client = Client(config_dir)
   client.complete_exchange(expassword, exphrase)
 
+
+@app.command()
+def view_version(version_id: int, config_dir: Path = config_dir_opt):
+  client = Client(config_dir)
+  client.view_version(version_id)
+
+
 @app.command()
 def version():
   secho(f'Version: {nsync_cli.__version__}')
+
 
 def error(msg, exit=False):
   click.secho('Error: ' + msg, fg='red', err=True)

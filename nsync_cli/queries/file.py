@@ -88,3 +88,20 @@ query{
   }
 }
 """
+
+view_version = """
+query {
+  fileVersions(first: 1, id: $version_id) {
+    edges{
+      node{
+        download
+        rawId
+        syncFile{
+          id
+          path
+        }
+      }
+    }
+  }
+}
+"""
