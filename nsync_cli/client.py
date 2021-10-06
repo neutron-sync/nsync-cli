@@ -163,10 +163,10 @@ class Client:
     local_last = None
     remote_last = None
 
-    if self.config['last_transction']:
-      local_last = self.config['last_transction']
+    if self.config['last_transaction']:
+      local_last = self.config['last_transaction']
 
-    data = self.graphql('last_transaction')
+    data = self.graphql('last_transaction', key=self.config['key']['name'])
     if data['data']['fileTransactions']['edges']:
       remote_last = data['data']['fileTransactions']['edges'][0]['node']['rawId']
 
@@ -180,7 +180,7 @@ class Client:
         return
 
     if remote_last:
-      self.config['last_transction'] = remote_last
+      self.config['last_transaction'] = remote_last
       save_config(self.config_dir, self.config)
 
   def check_transaction(self):

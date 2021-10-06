@@ -5,8 +5,8 @@ DEFAULT_SERVER_URL = 'https://www.neutronsync.com'
 
 
 def set_defaults(data):
-  if 'last_transction' not in data:
-    data['last_transction'] = None
+  if 'last_transaction' not in data:
+    data['last_transaction'] = None
 
   if 'expansions' not in data:
     data['expansions'] = {'HOME': os.environ['HOME']}
@@ -37,7 +37,7 @@ def get_config(config_dir):
     'backups': True,
     'backup_suffix': '.backup',
     'extensions_ignore': ['.backup'],
-    'last_transction': None,
+    'last_transaction': None,
   }
 
 

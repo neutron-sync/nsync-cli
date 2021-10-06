@@ -23,7 +23,7 @@ $qname: saveVersion(input: {
 
 pull_versions = """
 query{
-  fileTransactions (first: 1) {
+  fileTransactions (first: 1, key: $key) {
     edges{
       node {
         id
