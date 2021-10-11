@@ -108,3 +108,26 @@ query {
   }
 }
 """
+
+view_latest = """
+query{
+  syncFiles(first: 1, path: $path) {
+    edges{
+      node{
+        path
+        latestVersion{
+          download
+          rawId
+          isDir
+          linuxPerm
+          timestamp
+          syncFile{
+            id
+            path
+          }
+        }
+      }
+    }
+  }
+}
+"""

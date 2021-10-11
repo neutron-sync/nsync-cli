@@ -1,13 +1,21 @@
+import base64
+import datetime
+import difflib
 import os
 import shutil
+import stat
 import sys
 from pathlib import Path
 
+import click
+import httpx
 import pendulum
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives.kdf.scrypt import Scrypt
 from py_essentials import hashing as hs
 from tabulate import tabulate
+
+from nsync_cli.config import save_config
 
 
 class CommandsMixin:
@@ -86,8 +94,33 @@ class CommandsMixin:
         self.error(f"Not Found {item_type}:{item_id}")
         sys.exit(1)
 
-  def diff (self, path, version_id=None):
+  def diff (self, path, style, version_id=None):
     self.check_auth()
+
+    with path.open('r') as fh:
+      local_lines = fh.readlines()
+
+    if version_id:
+      data = self.graphql('view_version', version_id=version_id)
+      v = data['data']['fileVersions']['edges'][0]['node']
+
+    else:
+      remote_path = self.shrink_path(path)
+      data = self.graphql('view_latest', path=remote_path)
+      v = data['data']['syncFiles']['edges'][0]['node']['latestVersion']
+
+    response = httpx.get(v['download'])
+    ebody = base64.b64decode(response.content)
+    body = self.furry.decrypt(ebody)
+    remote_lines = body.decode().splitlines(True)
+
+    if style == 'compact':
+      for line in difflib.unified_diff(remote_lines, local_lines):
+        self.echo(line, newline=False)
+
+    else:
+      for line in difflib.ndiff(remote_lines, local_lines):
+        self.echo(line, newline=False)
 
   def login(self, username, password):
     data = self.graphql('login', username=username, password=password)

@@ -55,7 +55,7 @@ def push(
 def pull(
     path_glob: List[str] = typer.Argument(None),
     config_dir: Path = config_dir_opt,
-    force: bool = typer.Option(False, "--force", help="Force all files to down"),
+    force: bool = typer.Option(False, "--force", help="Force all files to download"),
     confirmed: bool = typer.Option(False, "--confirmed", help="Continue skipping confirmations"),
 ):
   paths = []
@@ -175,11 +175,12 @@ def view_version(
 @app.command()
 def diff(
   path: Path,
+  style: str = typer.Argument('compact', help="Diff style: compact or full"),
   version_id: int = typer.Option(None, "--version", help="Version to diff"),
   config_dir: Path = config_dir_opt
 ):
   client = Client(config_dir)
-  client.diff(path, version_id)
+  client.diff(path, style, version_id)
 
 
 @app.command()

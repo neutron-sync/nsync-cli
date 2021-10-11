@@ -16,7 +16,7 @@ from nsync_cli.client_commands import CommandsMixin
 from nsync_cli.config import get_config, save_config
 from nsync_cli.queries.login import login_query
 from nsync_cli.queries.user import user_query, key_query, save_key, last_transaction
-from nsync_cli.queries.file import save_version_outer, save_version_inner, pull_versions, pull_versions_page, view_version
+from nsync_cli.queries.file import save_version_outer, save_version_inner, pull_versions, pull_versions_page, view_version, view_latest
 from nsync_cli.queries.delete import delete_item
 from nsync_cli.queries.exchange import start_exchange, complete_exchange
 
@@ -32,6 +32,7 @@ class Client(CommandsMixin):
     'pull_versions': Template(pull_versions),
     'pull_versions_page': Template(pull_versions_page),
     'view_version': Template(view_version),
+    'view_latest': Template(view_latest),
     'start_exchange': Template(start_exchange),
     'complete_exchange': Template(complete_exchange),
   }
@@ -48,6 +49,10 @@ class Client(CommandsMixin):
 
     self.client = httpx.Client(cookies=self.cookies, base_url=self.config['server_url'])
 
+  @property
+  def furry(self):
+    return Fernet(self.config['key']['value'])
+
   @staticmethod
   def error(msg):
     click.secho('Error: ' + msg, fg='red', err=True)
@@ -57,8 +62,8 @@ class Client(CommandsMixin):
     click.secho(msg, fg='green')
 
   @staticmethod
-  def echo(msg):
-    click.secho(msg)
+  def echo(msg, newline=True):
+    click.secho(msg, nl=newline)
 
   def save_cookies(self):
     self.cookies = dict(self.last_response.cookies)
