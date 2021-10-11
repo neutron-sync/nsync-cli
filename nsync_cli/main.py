@@ -173,6 +173,16 @@ def view_version(
 
 
 @app.command()
+def diff(
+  path: Path,
+  version_id: int = typer.Option(None, "--version", help="Version to diff"),
+  config_dir: Path = config_dir_opt
+):
+  client = Client(config_dir)
+  client.diff(path, version_id)
+
+
+@app.command()
 def version():
   secho(f'Version: {nsync_cli.__version__}')
 
