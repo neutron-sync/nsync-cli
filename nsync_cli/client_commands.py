@@ -2,7 +2,6 @@ import base64
 import datetime
 import difflib
 import os
-import shutil
 import stat
 import sys
 from pathlib import Path
@@ -14,6 +13,7 @@ from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives.kdf.scrypt import Scrypt
 from py_essentials import hashing as hs
 from tabulate import tabulate
+from three_merge import merge
 
 from nsync_cli.config import save_config
 
@@ -109,9 +109,7 @@ class CommandsMixin:
       data = self.graphql('view_latest', path=remote_path)
       v = data['data']['syncFiles']['edges'][0]['node']['latestVersion']
 
-    response = httpx.get(v['download'])
-    ebody = base64.b64decode(response.content)
-    body = self.furry.decrypt(ebody)
+    body = self.download_file(v['download'])
     remote_lines = body.decode().splitlines(True)
 
     if style == 'compact':
@@ -130,6 +128,41 @@ class CommandsMixin:
     else:
       self.error('Login Failed')
       sys.exit(1)
+
+  def merge(self, path, confirmed=False, version_id=None):
+    self.check_auth()
+    remote_path = self.shrink_path(path)
+    transaction = self.type_id("FileTransactionNode", self.config.get('last_transaction') or 0)
+
+    if version_id:
+      data = self.graphql('view_version', version_id=version_id)
+      latest = data['data']['fileVersions']['edges'][0]['node']
+
+    else:
+      data = self.graphql('view_latest', path=remote_path)
+      latest = data['data']['syncFiles']['edges'][0]['node']['latestVersion']
+
+    data = self.graphql('version_by_transaction', transaction=transaction, path=remote_path)
+    base = data['data']['fileVersions']['edges'][0]['node']
+
+    latest = self.download_file(latest['download'])
+    base = self.download_file(base['download'])
+
+    with path.open('r') as fh:
+      local = fh.read()
+
+    merged = merge(local, latest.decode(), base.decode())
+    self.echo("=" * 40)
+    self.echo(merged)
+    self.echo("=" * 40)
+
+    if confirmed or click.confirm('Do you wish to save merged file?'):
+      self.backup_file(path)
+      with path.open('w') as fh:
+        fh.write(merged)
+
+      self.print(f'Saved: {path}')
+      self.print('Use "nsync add" to push file to remote.')
 
   def pull_paths(self, paths, force=False, confirmed=False):
     self.check_auth()
@@ -158,11 +191,8 @@ class CommandsMixin:
             ebody = base64.b64decode(response.content)
             body = furry.decrypt(ebody)
 
-            if self.config['backups'] and v['local'].exists():
-              backup = Path(str(v['local']))
-              backup = backup.with_suffix(self.config['backup_suffix'])
-              backup.touch()
-              shutil.copy2(v['local'], backup)
+            if v['local'].exists():
+              self.backup_file(v['local'])
 
             with v['local'].open('wb') as fh:
               fh.write(body)

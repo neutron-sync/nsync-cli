@@ -131,3 +131,27 @@ query{
   }
 }
 """
+
+version_by_transaction = """
+query{
+  fileVersions(
+    first: 1
+    transaction_Lte: $transaction
+    syncFile_Path: $path
+  ) {
+    edges{
+      node{
+        rawId
+        download
+        isDir
+        linuxPerm
+        timestamp
+        syncFile{
+          id
+          path
+        }
+      }
+    }
+  }
+}
+"""

@@ -184,6 +184,17 @@ def diff(
 
 
 @app.command()
+def merge(
+  path: Path,
+  version_id: int = typer.Option(None, "--version", help="Version to merge"),
+  confirmed: bool = typer.Option(False, "--confirmed", help="Continue skipping confirmations"),
+  config_dir: Path = config_dir_opt
+):
+  client = Client(config_dir)
+  client.merge(path, version_id=version_id, confirmed=confirmed)
+
+
+@app.command()
 def version():
   secho(f'Version: {nsync_cli.__version__}')
 

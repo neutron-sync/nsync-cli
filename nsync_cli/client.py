@@ -1,6 +1,7 @@
 import base64
 import datetime
 import json
+import shutil
 import stat
 import sys
 from pathlib import Path
@@ -16,7 +17,8 @@ from nsync_cli.client_commands import CommandsMixin
 from nsync_cli.config import get_config, save_config
 from nsync_cli.queries.login import login_query
 from nsync_cli.queries.user import user_query, key_query, save_key, last_transaction
-from nsync_cli.queries.file import save_version_outer, save_version_inner, pull_versions, pull_versions_page, view_version, view_latest
+from nsync_cli.queries.file import save_version_outer, save_version_inner, pull_versions, \
+  pull_versions_page, view_version, view_latest, version_by_transaction
 from nsync_cli.queries.delete import delete_item
 from nsync_cli.queries.exchange import start_exchange, complete_exchange
 
@@ -33,6 +35,7 @@ class Client(CommandsMixin):
     'pull_versions_page': Template(pull_versions_page),
     'view_version': Template(view_version),
     'view_latest': Template(view_latest),
+    'version_by_transaction': Template(version_by_transaction),
     'start_exchange': Template(start_exchange),
     'complete_exchange': Template(complete_exchange),
   }
@@ -214,6 +217,23 @@ class Client(CommandsMixin):
         p = p.replace('{{' + key + '}}', d)
 
     return Path(p)
+
+  def type_id(self, t, id):
+    tid = f"{t}:{id}"
+    return  base64.b64encode(tid.encode()).decode()
+
+  def download_file(self, url):
+    response = httpx.get(url)
+    ebody = base64.b64decode(response.content)
+    return self.furry.decrypt(ebody)
+
+  def backup_file(self, path):
+    backups = self.config.get('backups')
+    suffix = self.config.get('backup_suffix')
+    if backups and suffix:
+      backup = path.with_suffix(suffix)
+      backup.touch()
+      shutil.copy2(path, backup)
 
   def pull_with_pagination(self, key):
     end_cursor = None
