@@ -50,7 +50,7 @@ class Client(CommandsMixin):
       with self.cookie_path.open('r') as fh:
         self.cookies = json.loads(fh.read())
 
-    self.client = httpx.Client(cookies=self.cookies, base_url=self.config['server_url'])
+    self.client = httpx.Client(base_url=self.config['server_url'])
 
   @property
   def furry(self):
@@ -110,9 +110,19 @@ class Client(CommandsMixin):
     return data
 
   def make_query(self, query):
-    self.last_response = self.client.post('/graphql', data={'query': query}, cookies=self.cookies)
-    data = self.last_response.json()
+    self.last_response = self.client.post(
+      '/graphql',
+      data={'query': query},
+      cookies=self.cookies,
+      follow_redirects=True,
+    )
     self.save_cookies()
+
+    if self.last_response.status_code == 207:
+      self.error("2 Factor authorization required. Use 'nsync login' to continue.")
+      sys.exit(1)
+
+    data = self.last_response.json()
     return data
 
   def graphql_batch(self, qname, batch):

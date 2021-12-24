@@ -1,6 +1,5 @@
 [project]
 name = "nsync-cli"
-version = {from = "nsync_cli/__init__.py"}
 description = "NeutronSync command line client. Use to securely sync your dot files."
 authors = [
     {name = "Paul Bailey", email = "paul@neutron.studio"},
@@ -15,7 +14,7 @@ dependencies = [
     "three-merge~=0.1",
 ]
 requires-python = ">=3.7"
-dynamic = ["classifiers", "version"]
+dynamic = ["version"]
 license = {text = "MIT"}
 readme = "README.md"
 
@@ -33,6 +32,7 @@ nsync = "nsync_cli.main:app"
 
 [tool]
 [tool.pdm]
+version = {from = "nsync_cli/__init__.py"}
 [tool.pdm.dev-dependencies]
 dev = [
     "yapf~=0.31",

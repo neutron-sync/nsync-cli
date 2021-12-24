@@ -4,6 +4,7 @@ import difflib
 import os
 import stat
 import sys
+import time
 from pathlib import Path
 
 import click
@@ -121,9 +122,24 @@ class CommandsMixin:
         self.echo(line, newline=False)
 
   def login(self, username, password):
+    self.cookies = {}
     data = self.graphql('login', username=username, password=password)
     if data['data']['login']['user']:
       self.print('Login Successful')
+      if data['data']['login']['mfaUrl']:
+        self.echo('2nd Factor verification required to continue.')
+        self.echo('Verify your 2nd factor at:')
+        self.echo(data['data']['login']['mfaUrl'])
+        url = '/2fa/request-use/{}/'.format(data['data']['login']['token'])
+
+        while 1:
+          time.sleep(5)
+          self.echo(".", False)
+          response = self.client.get(url, cookies=self.cookies)
+          if response.status_code == 200:
+            break
+
+        self.echo("")
 
     else:
       self.error('Login Failed')

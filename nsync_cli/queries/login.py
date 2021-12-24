@@ -13,6 +13,8 @@ mutation {
     errors{
       messages
     }
+    mfaUrl
+    token
   }
 }
 """
