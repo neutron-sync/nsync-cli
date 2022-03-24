@@ -67,6 +67,7 @@ query{
       node{
         path
         latestVersion{
+          rawId
           download
           permissions
           timestamp
