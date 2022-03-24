@@ -75,7 +75,7 @@ query{
           created
           transaction {
             id
-            intId
+            rawId
           }
         }
       }
