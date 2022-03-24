@@ -66,6 +66,7 @@ query{
     edges{
       node{
         path
+        rawId
         latestVersion{
           rawId
           download
